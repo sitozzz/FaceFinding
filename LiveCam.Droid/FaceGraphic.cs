@@ -16,12 +16,18 @@ namespace LiveCam.Droid
 {
     public class FaceGraphic : Graphic
     {
+        //Угол обзора камеры
+        private static readonly float FOV = 90.0f;
+
         private static readonly float FACE_POSITION_RADIUS = 10.0f;
         private static readonly float ID_TEXT_SIZE = 40.0f;
         private static readonly float ID_Y_OFFSET = 50.0f;
         private static readonly float ID_X_OFFSET = -50.0f;
         private static readonly float BOX_STROKE_WIDTH = 5.0f;
-
+        //Размеры холста
+        private static readonly float SCREEN_WIDTH = 1280.0f;
+        private static readonly float SCREEN_HEIGHT = 720.0f;
+        //Цвета для рамок
         private static Color[] COLOR_CHOICES = {
         Color.Blue,
         Color.Cyan,
@@ -80,33 +86,58 @@ namespace LiveCam.Droid
 
         public override void Draw(Canvas canvas)
         {
+            //Определяем лицо
             Face face = mFace;
             if (face == null)
             {
                 return;
             }
-
             // Draws a circle at the position of the detected face, with the face's track id below.
             float x = TranslateX(face.Position.X + face.Width / 2);
             float y = TranslateY(face.Position.Y + face.Height / 2);
-            //canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
+            //Отрисовка точки в центре квадрата
+            canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
 
             //HACK: Demo only
             if(!string.IsNullOrEmpty(MainActivity.GreetingsText))
-                
+            //Отображение текста    
             canvas.DrawText(MainActivity.GreetingsText, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
             //canvas.DrawText("happiness: " + Math.Round(face.IsSmilingProbability, 2).ToString(), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
             //canvas.DrawText("right eye: " + Math.Round(face.IsRightEyeOpenProbability, 2).ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
             //canvas.DrawText("left eye: " + Math.Round(face.IsLeftEyeOpenProbability, 2).ToString(), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
-
+            //canvas.DrawText("pos = " + face.Position, x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
+            //canvas.DrawText("x: " + x.ToString(), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
+            //canvas.DrawText("y: " + y.ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
             // Draws a bounding box around the face.
+           
             float xOffset = ScaleX(face.Width / 2.0f);
             float yOffset = ScaleY(face.Height / 2.0f);
+            //Координаты квадрата
             float left = x - xOffset;
             float top = y - yOffset;
             float right = x + xOffset;
             float bottom = y + yOffset;
-            canvas.DrawRect(left, top, right, bottom, mBoxPaint);
+            //-----------------------------------------------------------------------
+            
+            //Угловые координаты
+            float angularCoordinateX = (x - SCREEN_WIDTH / 2) / FOV;
+            float angularCoordinateY = (y - SCREEN_HEIGHT / 2) / FOV;
+            
+            //Центр левого глаза
+            float leftCenterX = SCREEN_WIDTH / 4;
+            float leftCenterY = SCREEN_HEIGHT / 2;
+
+            //Центр правого глаза
+            float rightCenterX = (SCREEN_WIDTH * 3 / 4);
+            float rightCenterY = SCREEN_HEIGHT / 2;
+
+
+            //------------------------------------------------------------------------
+            //Отрисовка рамок
+            canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
+            canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
+            
+            
         }
     }
 }

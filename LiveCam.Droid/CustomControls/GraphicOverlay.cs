@@ -89,7 +89,11 @@ namespace LiveCam.Droid
         public override void Draw(Canvas canvas)
         {
             base.Draw(canvas);
+            Paint paint = new Paint();
+            paint.Color = Color.White;
+            
             canvas.DrawColor(Color.Black);
+            canvas.DrawLine(canvas.Width / 2, 0, canvas.Width/2, canvas.Height, paint);
             lock(mLock) {
                 if ((PreviewWidth != 0) && (PreviewHeight != 0))
                 {

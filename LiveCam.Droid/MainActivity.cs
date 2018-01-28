@@ -138,7 +138,7 @@ namespace LiveCam.Droid
             }
 
             mCameraSource = new CameraSource.Builder(context, detector)
-                    .SetRequestedPreviewSize(640, 480)
+                    .SetRequestedPreviewSize(1280, 720)
                                             .SetFacing(CameraFacing.Back)
                     .SetRequestedFps(30.0f)
                     .Build();
