@@ -142,11 +142,11 @@ namespace LiveCam.Droid
                 // download completes on device.
                 Log.Warn(TAG, "Face detector dependencies are not yet available.");
             }
-
+            //Ставим основную камеру как фронтальную
             mCameraSource = new CameraSource.Builder(context, detector)
-                    .SetRequestedPreviewSize((int)height/8, (int)width/6)
-                                            .SetFacing(CameraFacing.Back)
-                    .SetRequestedFps(24.0f)
+                    .SetRequestedPreviewSize((int)height, (int)width)
+                                            .SetFacing(CameraFacing.Front)
+                    .SetRequestedFps(30.0f)
                     .Build();
         }
 
