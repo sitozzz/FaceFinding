@@ -1,0 +1,10 @@
+syntax = "proto3"; 
+
+import "protos/protos/definitions.proto";
+
+package image_service;
+
+service ImageService
+{
+    rpc make_request(Query) returns (QueryResponse);
+}

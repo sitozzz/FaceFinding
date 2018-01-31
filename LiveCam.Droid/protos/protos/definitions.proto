@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+message Query {
+    int32 id = 1;
+    Image image = 2;
+}
+
+message QueryResponse {
+    int32 id = 1;
+    QueryStatus status = 2;
+    string description = 3;
+}
+
+message Image {
+    bytes data = 1;
+}
+
+enum QueryStatus {
+    SUCCESS = 0;
+    ERROR = 1;
+}
+
