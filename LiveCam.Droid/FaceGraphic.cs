@@ -18,7 +18,7 @@ namespace LiveCam.Droid
     {
         //Угол обзора камеры
         private static readonly float FOV = 90.0f;
-        private static readonly float SOV = 0.0f;
+        private static readonly float SOV = 40.0f;
 
         private static readonly float FACE_POSITION_RADIUS = 10.0f;
         private static readonly float ID_TEXT_SIZE = 40.0f;
@@ -26,8 +26,8 @@ namespace LiveCam.Droid
         private static readonly float ID_X_OFFSET = -50.0f;
         private static readonly float BOX_STROKE_WIDTH = 5.0f;
         //Размеры холста
-        private static readonly float SCREEN_WIDTH = 1280.0f;
-        private static readonly float SCREEN_HEIGHT = 720.0f;
+        private static readonly float SCREEN_WIDTH = MainActivity.width;//1280.0f;
+        private static readonly float SCREEN_HEIGHT = MainActivity.height;//720.0f;
         //Цвета для рамок
         private static Color[] COLOR_CHOICES = {
         Color.Blue,
@@ -86,7 +86,7 @@ namespace LiveCam.Droid
         }
 
         public override void Draw(Canvas canvas)
-        {
+        {            
             //Определяем лицо
             Face face = mFace;
             if (face == null)
@@ -97,8 +97,8 @@ namespace LiveCam.Droid
             float x = TranslateX(face.Position.X + face.Width / 2);
             float y = TranslateY(face.Position.Y + face.Height / 2);
             //Отрисовка точки в центре квадрата
-            canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
-
+            //canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
+            
             //HACK: Demo only
             if(!string.IsNullOrEmpty(MainActivity.GreetingsText))
             //Отображение текста    
@@ -122,8 +122,8 @@ namespace LiveCam.Droid
             //Возможно стоит использовать face.Position.X
 
             //Погрешность установки телефона в шлем
-            float dx = 0f;
-            float dy = 0f;
+            float dx = 0.0f;
+            float dy = 0.0f;
 
             //Угловые координаты
             float angularCoordinateX = (x - SCREEN_WIDTH / 2) / FOV;
@@ -143,13 +143,16 @@ namespace LiveCam.Droid
 
             //Координаты правой рамки
             float rightRectX = rightCenterX + dx + (x - SCREEN_WIDTH / 2) * (FOV / SCREEN_HEIGHT) * SCREEN_HEIGHT / SOV;
-            float rightRectY = rightCenterY + dy + (y - SCREEN_HEIGHT/2) * (FOV / SCREEN_HEIGHT) * SCREEN_HEIGHT / SOV;
+            float rightRectY = rightCenterY + dy + (y - SCREEN_HEIGHT / 2) * (FOV / SCREEN_HEIGHT) * SCREEN_HEIGHT / SOV;
             //------------------------------------------------------------------------
             //Отрисовка рамок
-            canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            
-            
+            //Левая
+            //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
+            canvas.DrawRect(left - leftCenterX, top, right - leftCenterX, bottom, mBoxPaint);
+            //Правая
+            //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
+            canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
+
         }
     }
 }

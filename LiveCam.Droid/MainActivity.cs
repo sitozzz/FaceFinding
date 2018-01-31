@@ -32,6 +32,8 @@ namespace LiveCam.Droid
         private CameraSourcePreview mPreview;
         private GraphicOverlay mGraphicOverlay;
 
+        public static float height;
+        public static float width;
 
         public static string GreetingsText
         {
@@ -47,6 +49,10 @@ namespace LiveCam.Droid
         {
             base.OnCreate(bundle);
 
+            var metrics = Resources.DisplayMetrics;
+            MainActivity.width = metrics.WidthPixels;
+            MainActivity.height = metrics.HeightPixels;
+            Console.WriteLine("width = " + width + ", height = " + height);
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
 
@@ -138,9 +144,9 @@ namespace LiveCam.Droid
             }
 
             mCameraSource = new CameraSource.Builder(context, detector)
-                    .SetRequestedPreviewSize(1280, 720)
+                    .SetRequestedPreviewSize((int)height/8, (int)width/6)
                                             .SetFacing(CameraFacing.Back)
-                    .SetRequestedFps(30.0f)
+                    .SetRequestedFps(24.0f)
                     .Build();
         }
 
@@ -238,6 +244,7 @@ namespace LiveCam.Droid
 
         public override void OnUpdate(Detector.Detections detections, Java.Lang.Object item)
         {
+
             var face = item as Face;
             mOverlay.Add(mFaceGraphic);
             mFaceGraphic.UpdateFace(face);
