@@ -148,10 +148,10 @@ namespace LiveCam.Droid
             //Отрисовка рамок
             //Левая
             //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left - leftCenterX, top, right - leftCenterX, bottom, mBoxPaint);
+            canvas.DrawRect(left, top, right, bottom, mBoxPaint);
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
+            //canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
 
         }
     }
