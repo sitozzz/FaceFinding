@@ -155,8 +155,8 @@ namespace LiveCam.Droid
 
         protected override void OnLayout(bool changed, int l, int t, int r, int b)
         {
-            int width = (int)MainActivity.width/8;//320;
-            int height = (int)MainActivity.height/8;//240;
+            int width = (int)MainActivity.width/2;//320;
+            int height = (int)MainActivity.height/2;//240;
             if (mCameraSource != null)
             {
                 var size = mCameraSource.PreviewSize;

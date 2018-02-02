@@ -4,7 +4,7 @@ using Android.OS;
 using Android.Gms.Vision;
 using Android.Support.V4.App;
 using Android.Support.V7.App;
-
+using ImageService;
 using Android.Util;
 using Android;
 using Android.Support.Design.Widget;
@@ -19,6 +19,14 @@ using Android.Gms.Common;
 using LiveCam.Shared;
 using System.Threading.Tasks;
 using ServiceHelpers;
+using System.IO;
+using System.Net.Http;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Runtime.InteropServices;
+using Android.Graphics;
+using Java.IO;
+using System.Drawing;
 
 namespace LiveCam.Droid
 {
@@ -34,7 +42,8 @@ namespace LiveCam.Droid
 
         public static float height;
         public static float width;
-
+        //Для получения данных с сервера
+        public static RecievedJson recievedJson;
         public static string GreetingsText
         {
             get;
@@ -52,7 +61,7 @@ namespace LiveCam.Droid
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
             MainActivity.height = metrics.HeightPixels;
-            Console.WriteLine("width = " + width + ", height = " + height);
+            System.Console.WriteLine("width = " + width + ", height = " + height);
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
 
@@ -144,7 +153,7 @@ namespace LiveCam.Droid
             }
 
             mCameraSource = new CameraSource.Builder(context, detector)
-                    .SetRequestedPreviewSize((int)height/8, (int)width/6)
+                    .SetRequestedPreviewSize((int)height/2, (int)width/2)
                                             .SetFacing(CameraFacing.Back)
                     .SetRequestedFps(24.0f)
                     .Build();
@@ -237,8 +246,19 @@ namespace LiveCam.Droid
         public override void OnNewItem(int id, Java.Lang.Object item)
         {
             mFaceGraphic.SetId(id);
-            //if (mCameraSource != null && !isProcessing)
-            //    mCameraSource.TakePicture(null, this);
+            if (mCameraSource != null && !isProcessing)
+            {
+                try
+                {
+                    mCameraSource.TakePicture(null, this);
+                }
+                catch (RuntimeException)
+                {
+
+                    System.Console.WriteLine("TakePicture failed!");
+                }
+                //mCameraSource.TakePicture(null, this);
+            }
             
         }
 
@@ -248,6 +268,7 @@ namespace LiveCam.Droid
             var face = item as Face;
             mOverlay.Add(mFaceGraphic);
             mFaceGraphic.UpdateFace(face);
+            
             
         }
         //Удаление рамки при потере лица
@@ -263,29 +284,184 @@ namespace LiveCam.Droid
 
         }
 
+        //public byte[] ConvertToJpg(byte[] bytedata, float w, float h)
+        //{
+        //    GCHandle gC = GCHandle.Alloc(bytedata, GCHandleType.Pinned);
+        //    int stride = 4 * ((24 * (int)w + 31) / 32);
+        //    Bitmap bitmap = new Bitmap(w, h, stride, PixelFormat.Format24bppRgb, gC.AddrOfPinnedObject());
+        //    MemoryStream ms = new MemoryStream();
+        //    bitmap.Save(ms, ImageFormat.Jpeg);
+        //    gC.Free();
+        //    return ms.ToArray();
+        //}
+        
+
         public void OnPictureTaken(byte[] data)
         {
+            Task.Run(async () => 
+            {
+                if (data != null)
+                {
+                    //Stream juststream = ContentResolver.OpenInputStream();
+                    MemoryStream stream = new MemoryStream();
+                    Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
+                    
+                    bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+                    //------------
+                    //Сохранение в память
+                    //var sdCardPath = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
+                    //var filePath = System.IO.Path.Combine(sdCardPath, "test.jpg");
+                    //var filestream = new FileStream(filePath, FileMode.Create);
+                    ////bitmap.Compress(Bitmap.CompressFormat.Png, 100, stream);
+                    //bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, filestream);
+                    //filestream.Close();
+                    //------------
+                    var bitmapData = Convert.ToBase64String( data);
+                    var fileContent = new StringContent(bitmapData);
+                    //var fileContent = new ByteArrayContent(bitmapData);
+                    //for (int i = 0; i < 4; i++)
+                    //{
+                        
+                    //    System.Console.WriteLine("Bitmap data = "+ bitmapData[i]);
+                    //}
+                    MultipartFormDataContent dataContent = new MultipartFormDataContent();
+                    //dataContent.Add(fileContent, "File");
+                    dataContent.Add(fileContent, "File");
+                    
+
+                    using (var client = new HttpClient())
+                    {
+                        //Заголовки
+                        //var content = new ByteArrayContent(data);
+                        //content.Headers.Add("width", (MainActivity.width / 6).ToString());
+                        //content.Headers.Add("height", (MainActivity.height / 8).ToString());
+                        ////Глубина цвета
+                        //content.Headers.Add("color", (data.Length / ((MainActivity.width / 6) * (MainActivity.height / 8))).ToString());
+                        
+                        dataContent.Headers.Add("width", (MainActivity.width / 2).ToString());
+                        dataContent.Headers.Add("height", (MainActivity.height / 2).ToString());
+                        //Глубина цвета
+                        dataContent.Headers.Add("color", (data.Length / ((MainActivity.width / 2) * (MainActivity.height / 2))).ToString());
+
+                        try
+                        {
+                            var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var recievedContent = await response.Content.ReadAsStringAsync();
+                                //JObject jObject = JObject.Parse(recievedContent);
+                                //Получаем объект
+                                MainActivity.recievedJson = JsonConvert.DeserializeObject<RecievedJson>(recievedContent);
+                            }
+                            else
+                            {
+                                System.Console.WriteLine("Подключение не удалось!");
+                            }
+                        }
+
+                        catch (HttpRequestException)
+                        {
+
+                            System.Console.WriteLine("Подключение не удалось! CATCH");
+                        }
+
+
+                    }
+                }
+            });
+           
+            
+            //var content = new MultipartFormDataContent();
+            ////content.Add(new StreamContent())
+            //HttpClient httpClient = new HttpClient();
+            //HttpRequestMessage requestMessage = new HttpRequestMessage();
+            //requestMessage.RequestUri = new Uri("http://192.168.2.95:50053");
+            //requestMessage.Method = HttpMethod.Post;
+            ////requestMessage.Content = ;
+
+
+            //--------------------------------------------------
             Task.Run(async () =>
             {
                 try
                 {
                     isProcessing = true;
 
-                    Console.WriteLine("face detected: ");
+                    System.Console.WriteLine("data = " + data.Length);
+                    
+                    //var imageAnalyzer = new ImageAnalyzer(data);
+                    //Console.WriteLine("type = "+imageAnalyzer.Data.GetType().ToString() );
 
-                    var imageAnalyzer = new ImageAnalyzer(data);
-                    await LiveCamHelper.ProcessCameraCapture(imageAnalyzer);
+                    //Канал подключения
+                    //Grpc.Core.Channel channel = new Grpc.Core.Channel("192.168.2.95:50053", Grpc.Core.ChannelCredentials.Insecure);
+
+                    ////Клиент
+                    //ImageService.ImageService.ImageServiceClient imageService = new ImageService.ImageService.ImageServiceClient(channel);
+                    //Image image = new Image();
+                    //image.Data = Google.Protobuf.ByteString.CopyFrom(data);
+                    //Query query = new Query();
+                    //query.Id = 1;
+                    //query.Image = image;
+                    //Console.WriteLine("qsize="+query.CalculateSize()); 
+                    //var recievedData = imageService.make_request(query);
+                    //Console.WriteLine("id: " + recievedData.Id + " status: " + recievedData.Status + " decr: " + recievedData.Description);
+                    //await channel.WaitForStateChangedAsync(Grpc.Core.ChannelState.Connecting);
+                    //channel.ShutdownAsync().Wait();
+
+
+                    //var filename = System.IO.Path.Combine(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures).ToString(), "NewFolder");
+                    //Directory.CreateDirectory(filename);
+
+
+                    //using (var fileOutputStream = new Java.IO.FileOutputStream(filename))
+                    //{
+                    //    await fileOutputStream.WriteAsync(data);
+                    //}
+                    //await LiveCamHelper.ProcessCameraCapture(imageAnalyzer);
+
 
                 }
 
                 finally
                 {
+                    ////Канал подключения
+                    //Grpc.Core.Channel channel = new Grpc.Core.Channel("192.168.2.95:50053", Grpc.Core.ChannelCredentials.Insecure);
+
+                    ////Клиент
+                    //ImageService.ImageService.ImageServiceClient imageService = new ImageService.ImageService.ImageServiceClient(channel);
+                    //Image image = new Image();
+                    //image.Data = Google.Protobuf.ByteString.CopyFrom(data);
+                    //Query query = new Query();
+                    //query.Id = 1;
+                    //query.Image = image;
+                    //var recievedData = imageService.make_requestAsync(query);
+                    //Console.WriteLine("smth");
+                    //Console.WriteLine("id: " + recievedData.GetStatus()); //+ " status: " + recievedData.Status + " decr: " + recievedData.Description);
+                    //channel.ShutdownAsync().Wait();
+
                     isProcessing = false;
 
 
                 }
 
             });
+            
+            ////Канал подключения
+            //Grpc.Core.Channel channel = new Grpc.Core.Channel("192.168.2.95:50053", Grpc.Core.ChannelCredentials.Insecure);
+
+            ////Клиент
+            //ImageService.ImageService.ImageServiceClient imageService = new ImageService.ImageService.ImageServiceClient(channel);
+            //Image image = new Image();
+            //image.Data = Google.Protobuf.ByteString.CopyFrom(data);
+            //Query query = new Query();
+            //query.Id = 1;
+            //query.Image = image;
+            //Console.WriteLine("qsize=" + query.CalculateSize());
+            //var recievedData = imageService.make_request(query);
+            //Console.WriteLine("id: " + recievedData.Id + " status: " + recievedData.Status + " decr: " + recievedData.Description);
+            //channel.ShutdownAsync().Wait();
+            //Console.WriteLine("Task end");
         }
     }
 
