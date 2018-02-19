@@ -11,6 +11,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.Gms.Vision.Faces;
+using System.Threading.Tasks;
 
 namespace LiveCam.Droid
 {
@@ -72,6 +73,7 @@ namespace LiveCam.Droid
         public void SetId(int id)
         {
             mFaceId = id;
+            MainActivity.facesList.Add(id);
         }
 
 
@@ -86,23 +88,42 @@ namespace LiveCam.Droid
         }
 
         public override void Draw(Canvas canvas)
-        {            
+        {
             //Определяем лицо
             Face face = mFace;
             if (face == null)
             {
                 return;
             }
+
             // Draws a circle at the position of the detected face, with the face's track id below.
             float x = TranslateX(face.Position.X + face.Width / 2);
             float y = TranslateY(face.Position.Y + face.Height / 2);
             //Отрисовка точки в центре квадрата
             //canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
-            
+
             //HACK: Demo only
-            if(!string.IsNullOrEmpty(MainActivity.GreetingsText))
-            //Отображение текста    
-            canvas.DrawText(MainActivity.GreetingsText, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
+            
+            //if (!string.IsNullOrEmpty(MainActivity.GreetingsText))
+            //{
+            //    canvas.DrawText(MainActivity.GreetingsText, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
+            //}
+
+
+            ////Левая
+            //canvas.DrawRect(left - leftCenterX, top, right - leftCenterX, bottom, mBoxPaint);
+            ////Правая
+            //canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
+
+
+            //Отображение текста
+            //Дописать правильное отображение текста по id!
+            if (MainActivity.recievedJson != null && MainActivity.recievedJson.Id == face.Id)
+            {
+                canvas.DrawText(MainActivity.recievedJson.Name, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
+                canvas.DrawText(MainActivity.recievedJson.Name, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
+            }            
+            
             //canvas.DrawText("happiness: " + Math.Round(face.IsSmilingProbability, 2).ToString(), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
             //canvas.DrawText("right eye: " + Math.Round(face.IsRightEyeOpenProbability, 2).ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
             //canvas.DrawText("left eye: " + Math.Round(face.IsLeftEyeOpenProbability, 2).ToString(), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
@@ -110,7 +131,7 @@ namespace LiveCam.Droid
             //canvas.DrawText("x: " + x.ToString(), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
             //canvas.DrawText("y: " + y.ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
             // Draws a bounding box around the face.
-           
+
             float xOffset = ScaleX(face.Width / 2.0f);
             float yOffset = ScaleY(face.Height / 2.0f);
             //Координаты квадрата
@@ -128,7 +149,7 @@ namespace LiveCam.Droid
             //Угловые координаты
             float angularCoordinateX = (x - SCREEN_WIDTH / 2) / FOV;
             float angularCoordinateY = (y - SCREEN_HEIGHT / 2) / FOV;
-            
+
             //Центр левого глаза
             float leftCenterX = SCREEN_WIDTH / 4;
             float leftCenterY = SCREEN_HEIGHT / 2;
@@ -152,7 +173,9 @@ namespace LiveCam.Droid
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
             canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
-
+            //Id для теста (левый и правый глаз)
+            canvas.DrawText(face.Id.ToString(), right - leftCenterX + 40, bottom, mIdPaint);
+            canvas.DrawText(face.Id.ToString(), right + leftCenterX + 40, bottom, mIdPaint);
         }
     }
 }

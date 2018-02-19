@@ -27,6 +27,7 @@ using System.Runtime.InteropServices;
 using Android.Graphics;
 using Java.IO;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace LiveCam.Droid
 {
@@ -39,7 +40,8 @@ namespace LiveCam.Droid
 
         private CameraSourcePreview mPreview;
         private GraphicOverlay mGraphicOverlay;
-
+        //Массив с id лиц
+        public static List<int> facesList;
         public static float height;
         public static float width;
         //Для получения данных с сервера
@@ -58,17 +60,26 @@ namespace LiveCam.Droid
         {
             base.OnCreate(bundle);
 
+            if (MainActivity.recievedJson != null)
+            {
+                MainActivity.recievedJson = new RecievedJson();
+            }
+
+            if (MainActivity.facesList == null)
+            {
+                MainActivity.facesList = new List<int>();
+            }
+
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
             MainActivity.height = metrics.HeightPixels;
-            System.Console.WriteLine("width = " + width + ", height = " + height);
+            //System.Console.WriteLine("width = " + width + ", height = " + height);
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
 
             mPreview = FindViewById<CameraSourcePreview>(Resource.Id.preview);
             mGraphicOverlay = FindViewById<GraphicOverlay>(Resource.Id.faceOverlay);
             //greetingsText = FindViewById<TextView>(Resource.Id.greetingsTextView);
-
 
             if (ActivityCompat.CheckSelfPermission(this, Manifest.Permission.Camera) == Permission.Granted)
             {
@@ -129,7 +140,7 @@ namespace LiveCam.Droid
  */
         private void CreateCameraSource()
         {
-
+            
             var context = Application.Context;
             FaceDetector detector = new FaceDetector.Builder(context)
                     .SetClassificationType(ClassificationType.All)
@@ -259,7 +270,8 @@ namespace LiveCam.Droid
                 }
                 //mCameraSource.TakePicture(null, this);
             }
-            
+            System.Console.WriteLine("Id лица" + MainActivity.facesList[0].ToString());
+
         }
 
         public override void OnUpdate(Detector.Detections detections, Java.Lang.Object item)
@@ -269,12 +281,13 @@ namespace LiveCam.Droid
             mOverlay.Add(mFaceGraphic);
             mFaceGraphic.UpdateFace(face);
             
-            
+
         }
         //Удаление рамки при потере лица
         public override void OnMissing(Detector.Detections detections)
         {
             mOverlay.Remove(mFaceGraphic);
+            MainActivity.facesList.Clear();
 
         }
 
@@ -295,9 +308,29 @@ namespace LiveCam.Droid
         //    return ms.ToArray();
         //}
         
+        //формат передачи id
+        public string ListToString(List<int> collection)
+        {
+            string outputString = "";
+            foreach (var item in collection)
+            {
+                if (collection.Count >= 2)
+                {
+                    outputString += item.ToString() + ", ";
+                }
+                else
+                {
+                    outputString += item.ToString();
+                }
+                
+            }
+            return outputString;
+        }
 
+        //Отправка фотографии на сервер и получение JSON'a
         public void OnPictureTaken(byte[] data)
         {
+            System.Console.WriteLine("ListFaces = " + ListToString(MainActivity.facesList));
             Task.Run(async () => 
             {
                 if (data != null)
@@ -316,7 +349,7 @@ namespace LiveCam.Droid
                     //bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, filestream);
                     //filestream.Close();
                     //------------
-                    var bitmapData = Convert.ToBase64String( data);
+                    var bitmapData = Convert.ToBase64String(data);
                     var fileContent = new StringContent(bitmapData);
                     //var fileContent = new ByteArrayContent(bitmapData);
                     //for (int i = 0; i < 4; i++)
@@ -328,7 +361,8 @@ namespace LiveCam.Droid
                     //dataContent.Add(fileContent, "File");
                     dataContent.Add(fileContent, "File");
                     
-
+                    //Необходимо отправлять id лиц, для последующей привязки текста к правильной рамке
+                    //Создать алгоритм определения id на холсте
                     using (var client = new HttpClient())
                     {
                         //Заголовки
@@ -337,7 +371,10 @@ namespace LiveCam.Droid
                         //content.Headers.Add("height", (MainActivity.height / 8).ToString());
                         ////Глубина цвета
                         //content.Headers.Add("color", (data.Length / ((MainActivity.width / 6) * (MainActivity.height / 8))).ToString());
-                        
+                        //------------------------------------
+                        //Массив id
+                        dataContent.Headers.Add("Ids", ListToString(MainActivity.facesList));
+                        //------------------------------------
                         dataContent.Headers.Add("width", (MainActivity.width / 2).ToString());
                         dataContent.Headers.Add("height", (MainActivity.height / 2).ToString());
                         //Глубина цвета
