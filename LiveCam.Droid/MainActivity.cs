@@ -28,6 +28,7 @@ using Android.Graphics;
 using Java.IO;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LiveCam.Droid
 {
@@ -46,6 +47,8 @@ namespace LiveCam.Droid
         public static float width;
         //Для получения данных с сервера
         public static RecievedJson recievedJson;
+        public static string photoName = "";
+        public static Dictionary<int, Dictionary<string, string>> data;
         public static string GreetingsText
         {
             get;
@@ -60,9 +63,13 @@ namespace LiveCam.Droid
         {
             base.OnCreate(bundle);
 
-            if (MainActivity.recievedJson != null)
+            if (MainActivity.recievedJson == null)
             {
                 MainActivity.recievedJson = new RecievedJson();
+            }
+            if (MainActivity.data == null)
+            {
+                MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
             }
 
             if (MainActivity.facesList == null)
@@ -85,7 +92,7 @@ namespace LiveCam.Droid
             {
                 CreateCameraSource();
                 LiveCamHelper.Init();
-                LiveCamHelper.GreetingsCallback = (s) => { RunOnUiThread(()=> GreetingsText = s ); };
+                LiveCamHelper.GreetingsCallback = (s) => { RunOnUiThread(() => GreetingsText = s); };
                 await LiveCamHelper.RegisterFaces();
             }
             else { RequestCameraPermission(); }
@@ -140,7 +147,7 @@ namespace LiveCam.Droid
  */
         private void CreateCameraSource()
         {
-            
+
             var context = Application.Context;
             FaceDetector detector = new FaceDetector.Builder(context)
                     .SetClassificationType(ClassificationType.All)
@@ -164,10 +171,11 @@ namespace LiveCam.Droid
             }
 
             mCameraSource = new CameraSource.Builder(context, detector)
-                    .SetRequestedPreviewSize((int)height/2, (int)width/2)
+                    .SetRequestedPreviewSize((int)height, (int)width )
                                             .SetFacing(CameraFacing.Back)
                     .SetRequestedFps(24.0f)
                     .Build();
+
         }
 
         /**
@@ -247,13 +255,13 @@ namespace LiveCam.Droid
         private CameraSource mCameraSource = null;
         private bool isProcessing = false;
 
-        public GraphicFaceTracker(GraphicOverlay overlay, CameraSource cameraSource =null)
+        public GraphicFaceTracker(GraphicOverlay overlay, CameraSource cameraSource = null)
         {
             mOverlay = overlay;
             mFaceGraphic = new FaceGraphic(overlay);
             mCameraSource = cameraSource;
         }
-        //Обнаружение лица
+        //Обнаружение нового лица
         public override void OnNewItem(int id, Java.Lang.Object item)
         {
             mFaceGraphic.SetId(id);
@@ -270,44 +278,30 @@ namespace LiveCam.Droid
                 }
                 //mCameraSource.TakePicture(null, this);
             }
-            System.Console.WriteLine("Id лица" + MainActivity.facesList[0].ToString());
-
+            //System.Console.WriteLine("Id лица" + MainActivity.facesList[0].ToString());
         }
-
         public override void OnUpdate(Detector.Detections detections, Java.Lang.Object item)
         {
-
             var face = item as Face;
             mOverlay.Add(mFaceGraphic);
             mFaceGraphic.UpdateFace(face);
-            
-
         }
         //Удаление рамки при потере лица
         public override void OnMissing(Detector.Detections detections)
         {
             mOverlay.Remove(mFaceGraphic);
+            //Чистим список активных id
             MainActivity.facesList.Clear();
+            MainActivity.photoName = "";
+            MainActivity.data.Clear();
 
         }
 
         public override void OnDone()
         {
             mOverlay.Remove(mFaceGraphic);
-
         }
 
-        //public byte[] ConvertToJpg(byte[] bytedata, float w, float h)
-        //{
-        //    GCHandle gC = GCHandle.Alloc(bytedata, GCHandleType.Pinned);
-        //    int stride = 4 * ((24 * (int)w + 31) / 32);
-        //    Bitmap bitmap = new Bitmap(w, h, stride, PixelFormat.Format24bppRgb, gC.AddrOfPinnedObject());
-        //    MemoryStream ms = new MemoryStream();
-        //    bitmap.Save(ms, ImageFormat.Jpeg);
-        //    gC.Free();
-        //    return ms.ToArray();
-        //}
-        
         //формат передачи id
         public string ListToString(List<int> collection)
         {
@@ -322,23 +316,112 @@ namespace LiveCam.Droid
                 {
                     outputString += item.ToString();
                 }
-                
+
             }
             return outputString;
         }
+        //static Dictionary<string, string> ParseJson(string res)
+        //{
+        //    var lines = res.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+        //    var ht = new Dictionary<string, string>(20);
+        //    var st = new Stack<string>(20);
 
+        //    for (int i = 0; i < lines.Length; ++i)
+        //    {
+        //        var line = lines[i];
+        //        var pair = line.Split(":".ToCharArray(), 2, StringSplitOptions.RemoveEmptyEntries);
+
+        //        if (pair.Length == 2)
+        //        {
+        //            var key = ClearString(pair[0]);
+        //            var val = ClearString(pair[1]);
+
+        //            if (val == "{")
+        //            {
+        //                st.Push(key);
+        //            }
+        //            else
+        //            {
+        //                if (st.Count > 0)
+        //                {
+        //                    key = string.Join("_", st) + "_" + key;
+        //                }
+
+        //                if (ht.ContainsKey(key))
+        //                {
+        //                    ht[key] += "&" + val;
+        //                }
+        //                else
+        //                {
+        //                    ht.Add(key, val);
+        //                }
+        //            }
+        //        }
+        //        else if (line.IndexOf('}') != -1 && st.Count > 0)
+        //        {
+        //            st.Pop();
+        //        }
+        //    }
+
+        //    return ht;
+        //}
+
+        //static string ClearString(string str)
+        //{
+        //    str = str.Trim();
+
+        //    var ind0 = str.IndexOf("\"");
+        //    var ind1 = str.LastIndexOf("\"");
+
+        //    if (ind0 != -1 && ind1 != -1)
+        //    {
+        //        str = str.Substring(ind0 + 1, ind1 - ind0 - 1);
+        //    }
+        //    else if (str[str.Length - 1] == ',')
+        //    {
+        //        str = str.Substring(0, str.Length - 1);
+        //    }
+
+        //    str = HttpUtility.UrlDecode(str);
+
+        //    return str;
+        //}
         //Отправка фотографии на сервер и получение JSON'a
+        public Dictionary<int, Dictionary<string, string>> parseString(string str)
+        {
+            Dictionary<string, string> result = new Dictionary<string, string>();
+            Dictionary<int, Dictionary<string, string>> output = new Dictionary<int, Dictionary<string, string>>();
+            var a = str.Split(';');
+            //System.Console.WriteLine("a length = " + a.Length);
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != "")
+                {
+                    var b = a[i].Split('|');
+                    result.Add("data", b[0]);
+                    result.Add("name", b[1]);
+                    result.Add("x", b[2]);
+                    result.Add("y", b[3]);
+                    result.Add("width", b[4]);
+                    result.Add("height", b[5]);
+                    output.Add(i, result);
+                }
+            }
+         
+            return output;
+        }
+
         public void OnPictureTaken(byte[] data)
         {
-            System.Console.WriteLine("ListFaces = " + ListToString(MainActivity.facesList));
-            Task.Run(async () => 
+            //System.Console.WriteLine("ListFaces = " + ListToString(MainActivity.facesList));
+            Task.Run(async () =>
             {
                 if (data != null)
                 {
                     //Stream juststream = ContentResolver.OpenInputStream();
                     MemoryStream stream = new MemoryStream();
                     Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
-                    
+
                     bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
                     //------------
                     //Сохранение в память
@@ -354,13 +437,13 @@ namespace LiveCam.Droid
                     //var fileContent = new ByteArrayContent(bitmapData);
                     //for (int i = 0; i < 4; i++)
                     //{
-                        
+
                     //    System.Console.WriteLine("Bitmap data = "+ bitmapData[i]);
                     //}
                     MultipartFormDataContent dataContent = new MultipartFormDataContent();
                     //dataContent.Add(fileContent, "File");
                     dataContent.Add(fileContent, "File");
-                    
+                    //Dictionary<string, string> dictionary = new Dictionary<string, string>();
                     //Необходимо отправлять id лиц, для последующей привязки текста к правильной рамке
                     //Создать алгоритм определения id на холсте
                     using (var client = new HttpClient())
@@ -371,6 +454,7 @@ namespace LiveCam.Droid
                         //content.Headers.Add("height", (MainActivity.height / 8).ToString());
                         ////Глубина цвета
                         //content.Headers.Add("color", (data.Length / ((MainActivity.width / 6) * (MainActivity.height / 8))).ToString());
+
                         //------------------------------------
                         //Массив id
                         dataContent.Headers.Add("Ids", ListToString(MainActivity.facesList));
@@ -386,10 +470,28 @@ namespace LiveCam.Droid
 
                             if (response.IsSuccessStatusCode)
                             {
-                                var recievedContent = await response.Content.ReadAsStringAsync();
+                                string recievedContent = await response.Content.ReadAsStringAsync();
+
+                                System.Console.WriteLine("content = " + recievedContent);
+
+                                MainActivity.data = parseString(recievedContent);
+                                
+                                //test
+                                parseString("2018-02-22 17:40:11|Unknown|54|102|88|88;");
+
+                                //System.Console.WriteLine("NewStr[0]" + newstr[0]);
+
+
+                                //MainActivity.photoName = recievedContent;
                                 //JObject jObject = JObject.Parse(recievedContent);
                                 //Получаем объект
-                                MainActivity.recievedJson = JsonConvert.DeserializeObject<RecievedJson>(recievedContent);
+
+                                //MainActivity.recievedJson = JsonConvert.DeserializeObject<RecievedJson>(recievedContent);
+                                //string Name = MainActivity.recievedJson.name;
+                                //dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(recievedContent);
+                                ////Не работает
+                                //System.Console.WriteLine("JSON = " + MainActivity.recievedJson.roi.ToString() + ", " + MainActivity.recievedJson.name.ToString());
+
                             }
                             else
                             {
@@ -399,16 +501,13 @@ namespace LiveCam.Droid
 
                         catch (HttpRequestException)
                         {
-
-                            System.Console.WriteLine("Подключение не удалось! CATCH");
+                            System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
                         }
-
-
                     }
+
+
                 }
             });
-           
-            
             //var content = new MultipartFormDataContent();
             ////content.Add(new StreamContent())
             //HttpClient httpClient = new HttpClient();
@@ -426,7 +525,7 @@ namespace LiveCam.Droid
                     isProcessing = true;
 
                     System.Console.WriteLine("data = " + data.Length);
-                    
+
                     //var imageAnalyzer = new ImageAnalyzer(data);
                     //Console.WriteLine("type = "+imageAnalyzer.Data.GetType().ToString() );
 
@@ -478,30 +577,10 @@ namespace LiveCam.Droid
                     //channel.ShutdownAsync().Wait();
 
                     isProcessing = false;
-
-
                 }
-
             });
-            
-            ////Канал подключения
-            //Grpc.Core.Channel channel = new Grpc.Core.Channel("192.168.2.95:50053", Grpc.Core.ChannelCredentials.Insecure);
-
-            ////Клиент
-            //ImageService.ImageService.ImageServiceClient imageService = new ImageService.ImageService.ImageServiceClient(channel);
-            //Image image = new Image();
-            //image.Data = Google.Protobuf.ByteString.CopyFrom(data);
-            //Query query = new Query();
-            //query.Id = 1;
-            //query.Image = image;
-            //Console.WriteLine("qsize=" + query.CalculateSize());
-            //var recievedData = imageService.make_request(query);
-            //Console.WriteLine("id: " + recievedData.Id + " status: " + recievedData.Status + " decr: " + recievedData.Description);
-            //channel.ShutdownAsync().Wait();
-            //Console.WriteLine("Task end");
         }
     }
-
 }
 
 

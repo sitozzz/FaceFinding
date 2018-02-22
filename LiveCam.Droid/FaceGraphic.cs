@@ -103,7 +103,7 @@ namespace LiveCam.Droid
             //canvas.DrawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
 
             //HACK: Demo only
-            
+
             //if (!string.IsNullOrEmpty(MainActivity.GreetingsText))
             //{
             //    canvas.DrawText(MainActivity.GreetingsText, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
@@ -118,12 +118,8 @@ namespace LiveCam.Droid
 
             //Отображение текста
             //Дописать правильное отображение текста по id!
-            if (MainActivity.recievedJson != null && MainActivity.recievedJson.Id == face.Id)
-            {
-                canvas.DrawText(MainActivity.recievedJson.Name, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
-                canvas.DrawText(MainActivity.recievedJson.Name, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
-            }            
-            
+
+
             //canvas.DrawText("happiness: " + Math.Round(face.IsSmilingProbability, 2).ToString(), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
             //canvas.DrawText("right eye: " + Math.Round(face.IsRightEyeOpenProbability, 2).ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
             //canvas.DrawText("left eye: " + Math.Round(face.IsLeftEyeOpenProbability, 2).ToString(), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
@@ -169,13 +165,36 @@ namespace LiveCam.Droid
             //Отрисовка рамок
             //Левая
             //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left - leftCenterX, top, right - leftCenterX, bottom, mBoxPaint);
+            canvas.DrawRect(left - leftCenterX , top, right - leftCenterX , bottom, mBoxPaint);
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
+            canvas.DrawRect(left + leftCenterX , top, right + leftCenterX , bottom, mBoxPaint);
             //Id для теста (левый и правый глаз)
-            canvas.DrawText(face.Id.ToString(), right - leftCenterX + 40, bottom, mIdPaint);
-            canvas.DrawText(face.Id.ToString(), right + leftCenterX + 40, bottom, mIdPaint);
+            //canvas.DrawText(face.Id.ToString(), right - leftCenterX + 40, bottom, mIdPaint);
+            //canvas.DrawText(face.Id.ToString(), right + leftCenterX + 40, bottom, mIdPaint);
+            //----------test text--------------
+
+            //canvas.DrawText("Имя: Иван", right - leftCenterX + 30, bottom - 190, mIdPaint);
+            //canvas.DrawText("Имя: Иван", right + leftCenterX + 30, bottom - 190, mIdPaint);
+
+            //---------------------------------
+            //Проверка принадлежности данных
+            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //Сюда добавить перебор по словарю data
+            if (MainActivity.data.Count != 0)//&& MainActivity.recievedJson.Id == face.Id)
+            {
+                if (MainActivity.data.Count > 1)
+                {
+
+
+                    Console.WriteLine("data line = name = " + MainActivity.data[0]["name"] + ", x = " + MainActivity.data[0]["x"] + ", y = " + MainActivity.data[0]["y"] + "name = " + MainActivity.data[1]["name"] + ", x = " + MainActivity.data[1]["x"] + ", y = " + MainActivity.data[1]["y"]);
+                }
+                canvas.DrawText(MainActivity.data[0]["name"], right - leftCenterX -200, bottom + 50 , mIdPaint);
+                canvas.DrawText(MainActivity.data[0]["name"], right + leftCenterX -200, bottom + 50, mIdPaint);
+                //Console.WriteLine("Ответ: " + MainActivity.recievedJson.Name);
+                //canvas.DrawText(MainActivity.recievedJson.Name, right - leftCenterX + 30, top / 2, mIdPaint);
+                //canvas.DrawText(MainActivity.recievedJson.Name, right + leftCenterX + 30, top / 2, mIdPaint);
+            }
         }
     }
 }

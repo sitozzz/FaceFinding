@@ -9,14 +9,22 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Newtonsoft.Json;
 
 namespace LiveCam.Droid
 {
     public class RecievedJson
     {
         //public Guid Id { get; set; }
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Roi { get; set; }
+        //public int Id { get; set; }
+
+        [JsonProperty(PropertyName = "time")]
+        public string time { get; set; }
+
+        [JsonProperty(PropertyName = "name")]
+        public string name { get; set; }
+        
+        [JsonProperty(PropertyName = "roi")]
+        public List<int> roi { get; set; }
     }
 }
