@@ -320,91 +320,30 @@ namespace LiveCam.Droid
             }
             return outputString;
         }
-        //static Dictionary<string, string> ParseJson(string res)
-        //{
-        //    var lines = res.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-        //    var ht = new Dictionary<string, string>(20);
-        //    var st = new Stack<string>(20);
-
-        //    for (int i = 0; i < lines.Length; ++i)
-        //    {
-        //        var line = lines[i];
-        //        var pair = line.Split(":".ToCharArray(), 2, StringSplitOptions.RemoveEmptyEntries);
-
-        //        if (pair.Length == 2)
-        //        {
-        //            var key = ClearString(pair[0]);
-        //            var val = ClearString(pair[1]);
-
-        //            if (val == "{")
-        //            {
-        //                st.Push(key);
-        //            }
-        //            else
-        //            {
-        //                if (st.Count > 0)
-        //                {
-        //                    key = string.Join("_", st) + "_" + key;
-        //                }
-
-        //                if (ht.ContainsKey(key))
-        //                {
-        //                    ht[key] += "&" + val;
-        //                }
-        //                else
-        //                {
-        //                    ht.Add(key, val);
-        //                }
-        //            }
-        //        }
-        //        else if (line.IndexOf('}') != -1 && st.Count > 0)
-        //        {
-        //            st.Pop();
-        //        }
-        //    }
-
-        //    return ht;
-        //}
-
-        //static string ClearString(string str)
-        //{
-        //    str = str.Trim();
-
-        //    var ind0 = str.IndexOf("\"");
-        //    var ind1 = str.LastIndexOf("\"");
-
-        //    if (ind0 != -1 && ind1 != -1)
-        //    {
-        //        str = str.Substring(ind0 + 1, ind1 - ind0 - 1);
-        //    }
-        //    else if (str[str.Length - 1] == ',')
-        //    {
-        //        str = str.Substring(0, str.Length - 1);
-        //    }
-
-        //    str = HttpUtility.UrlDecode(str);
-
-        //    return str;
-        //}
+        
         //Отправка фотографии на сервер и получение JSON'a
-        public Dictionary<int, Dictionary<string, string>> parseString(string str)
+        public Dictionary<int, Dictionary<string, string>> parseString(string json)
         {
-            Dictionary<string, string> result = new Dictionary<string, string>();
+            Dictionary<string, string> person = new Dictionary<string, string>();
             Dictionary<int, Dictionary<string, string>> output = new Dictionary<int, Dictionary<string, string>>();
-            var a = str.Split(';');
+            var persons = json.Split(';');
             //System.Console.WriteLine("a length = " + a.Length);
-            for (int i = 0; i < a.Length; i++)
+            for (int i = 0; i < persons.Length; i++)
             {
-                if (a[i] != "")
+                if (persons[i] != "")
                 {
-                    var b = a[i].Split('|');
-                    result.Add("data", b[0]);
-                    result.Add("name", b[1]);
-                    result.Add("x", b[2]);
-                    result.Add("y", b[3]);
-                    result.Add("width", b[4]);
-                    result.Add("height", b[5]);
-                    output.Add(i, result);
+                    var column = persons[i].Split('|');
+                    //Добавляем поля
+                    person.Add("data", column[0]);
+                    person.Add("name", column[1]);
+                    person.Add("x", column[2]);
+                    person.Add("y", column[3]);
+                    person.Add("width", column[4]);
+                    person.Add("height", column[5]);
+                    //Добавляем в основной словарь
+                    output.Add(i, person);
+                    //Чистим основной словарь
+                    person.Clear();
                 }
             }
          
@@ -477,21 +416,7 @@ namespace LiveCam.Droid
                                 MainActivity.data = parseString(recievedContent);
                                 
                                 //test
-                                parseString("2018-02-22 17:40:11|Unknown|54|102|88|88;");
-
-                                //System.Console.WriteLine("NewStr[0]" + newstr[0]);
-
-
-                                //MainActivity.photoName = recievedContent;
-                                //JObject jObject = JObject.Parse(recievedContent);
-                                //Получаем объект
-
-                                //MainActivity.recievedJson = JsonConvert.DeserializeObject<RecievedJson>(recievedContent);
-                                //string Name = MainActivity.recievedJson.name;
-                                //dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(recievedContent);
-                                ////Не работает
-                                //System.Console.WriteLine("JSON = " + MainActivity.recievedJson.roi.ToString() + ", " + MainActivity.recievedJson.name.ToString());
-
+                                //parseString("2018-02-22 17:40:11|Unknown|54|102|88|88;");
                             }
                             else
                             {
