@@ -29,11 +29,12 @@ using Java.IO;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
+using Android.Speech.Tts;
 
 namespace LiveCam.Droid
 {
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
-    public class MainActivity : AppCompatActivity, IFactory
+    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener
     {
         private static readonly string TAG = "FaceTracker";
 
@@ -58,10 +59,15 @@ namespace LiveCam.Droid
         private static readonly int RC_HANDLE_GMS = 9001;
         // permission request codes need to be < 256
         private static readonly int RC_HANDLE_CAMERA_PERM = 2;
-
+        //----------Speech----------------------
+        public static TextToSpeech textToSpeech;
+        Context context;
+        private readonly int MyCheckCode = 101, NeedLang = 103;
+        Java.Util.Locale lang;
         protected async override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
+            
 
             if (MainActivity.recievedJson == null)
             {
@@ -97,7 +103,62 @@ namespace LiveCam.Droid
             }
             else { RequestCameraPermission(); }
 
+            //Подключаем синтез голоса
+            textToSpeech = new TextToSpeech(this, this, "com.google.android.tts");
+            var langAvailable = new List<string> { "Default" };
+            var localesAvailable = Java.Util.Locale.GetAvailableLocales().ToList();
+            foreach (var locale in localesAvailable)
+            {
+                LanguageAvailableResult res = textToSpeech.IsLanguageAvailable(locale);
+                switch (res)
+                {
+                    case LanguageAvailableResult.Available:
+                        langAvailable.Add(locale.DisplayLanguage);
+                        break;
+                    case LanguageAvailableResult.CountryAvailable:
+                        langAvailable.Add(locale.DisplayLanguage);
+                        break;
+                    case LanguageAvailableResult.CountryVarAvailable:
+                        langAvailable.Add(locale.DisplayLanguage);
+                        break;
+                }
 
+            }
+            langAvailable = langAvailable.OrderBy(t => t).Distinct().ToList();
+
+            //var adapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerDropDownItem, langAvailable);
+            //spinLanguages.Adapter = adapter;
+
+            lang = Java.Util.Locale.Default;
+            textToSpeech.SetLanguage(lang);
+
+            // set the speed and pitch
+            textToSpeech.SetPitch(.5f);
+            textToSpeech.SetSpeechRate(.5f);
+
+
+
+        }
+
+        void TextToSpeech.IOnInitListener.OnInit(OperationResult status)
+        {
+            // if we get an error, default to the default language
+            if (status == OperationResult.Error)
+                textToSpeech.SetLanguage(Java.Util.Locale.Default);
+            // if the listener is ok, set the lang
+            if (status == OperationResult.Success)
+                textToSpeech.SetLanguage(lang);
+        }
+
+        protected override void OnActivityResult(int req, Result res, Intent data)
+        {
+            if (req == NeedLang)
+            {
+                // we need a new language installed
+                var installTTS = new Intent();
+                installTTS.SetAction(TextToSpeech.Engine.ActionInstallTtsData);
+                StartActivity(installTTS);
+            }
         }
 
         protected override void OnResume()
@@ -350,6 +411,20 @@ namespace LiveCam.Droid
             return output;
         }
 
+        public string sayAllNames(Dictionary<int, Dictionary<string, string>> persons)
+        {
+            string names = "";
+            for (int i = 0; i < persons.Count; i++)
+            {
+                names += persons[i]["name"];
+                if (i != persons.Count - 1)
+                {
+                    names += ", ";
+                }
+            }
+            return names;
+        }
+
         public void OnPictureTaken(byte[] data)
         {
             //System.Console.WriteLine("ListFaces = " + ListToString(MainActivity.facesList));
@@ -414,7 +489,8 @@ namespace LiveCam.Droid
                                 System.Console.WriteLine("content = " + recievedContent);
 
                                 MainActivity.data = parseString(recievedContent);
-                                
+                                //Читаем все имена, распознанные на фото
+                                MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
                                 //test
                                 //parseString("2018-02-22 17:40:11|Unknown|54|102|88|88;");
                             }
