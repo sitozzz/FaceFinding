@@ -39,6 +39,7 @@ namespace LiveCam.Droid
         Color.White,
         Color.Yellow
     };
+
         private static int mCurrentColorIndex = 0;
 
         private Paint mFacePositionPaint;
@@ -49,6 +50,8 @@ namespace LiveCam.Droid
         private int mFaceId;
         private float mFaceHappiness;
 
+        public static Dictionary<int, string> detectedNames;
+        public static bool[] drawable;
         public FaceGraphic(GraphicOverlay overlay) : base(overlay)
         {
             mCurrentColorIndex = (mCurrentColorIndex + 1) % COLOR_CHOICES.Length;
@@ -73,7 +76,7 @@ namespace LiveCam.Droid
         public void SetId(int id)
         {
             mFaceId = id;
-            MainActivity.facesList.Add(id);
+            //MainActivity.facesList.Add(id);
         }
 
 
@@ -115,10 +118,8 @@ namespace LiveCam.Droid
             ////Правая
             //canvas.DrawRect(left + leftCenterX, top, right + leftCenterX, bottom, mBoxPaint);
 
-
             //Отображение текста
             //Дописать правильное отображение текста по id!
-
 
             //canvas.DrawText("happiness: " + Math.Round(face.IsSmilingProbability, 2).ToString(), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
             //canvas.DrawText("right eye: " + Math.Round(face.IsRightEyeOpenProbability, 2).ToString(), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
@@ -165,35 +166,90 @@ namespace LiveCam.Droid
             //Отрисовка рамок
             //Левая
             //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left - leftCenterX , top, right - leftCenterX , bottom, mBoxPaint);
+            canvas.DrawRect(left - leftCenterX + 300, top, right - leftCenterX + 300, bottom, mBoxPaint);
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left + leftCenterX , top, right + leftCenterX , bottom, mBoxPaint);
+            canvas.DrawRect(left + leftCenterX - 300, top, right + leftCenterX - 300, bottom, mBoxPaint);
             //Id для теста (левый и правый глаз)
             //canvas.DrawText(face.Id.ToString(), right - leftCenterX + 40, bottom, mIdPaint);
             //canvas.DrawText(face.Id.ToString(), right + leftCenterX + 40, bottom, mIdPaint);
-            //----------test text--------------
 
-            //canvas.DrawText("Имя: Иван", right - leftCenterX + 30, bottom - 190, mIdPaint);
-            //canvas.DrawText("Имя: Иван", right + leftCenterX + 30, bottom - 190, mIdPaint);
+           
 
-            //---------------------------------
-            //Проверка принадлежности данных
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //Сюда добавить перебор по словарю data
-            if (MainActivity.data.Count != 0)//&& MainActivity.recievedJson.Id == face.Id)
+            if (MainActivity.facesList == null)
             {
-                if (MainActivity.data.Count > 1)
+                MainActivity.facesList = new List<int>();
+                MainActivity.faceid_id = new List<int>();
+
+            }
+
+            if (MainActivity.data != null && MainActivity.data.Count != 0)
+            {
+                //for (int i = 0; i == MainActivity.data.Count; i++)
+                //{
+                //    MainActivity.data[i]["x" + i];
+                //}
+                //Console.WriteLine("Count = " + MainActivity.data.Count);
+
+                if (FaceGraphic.drawable == null)
                 {
-
-
-                    Console.WriteLine("data line = name = " + MainActivity.data[0]["name"] + ", x = " + MainActivity.data[0]["x"] + ", y = " + MainActivity.data[0]["y"] + "name = " + MainActivity.data[1]["name"] + ", x = " + MainActivity.data[1]["x"] + ", y = " + MainActivity.data[1]["y"]);
+                    FaceGraphic.drawable = new bool[MainActivity.data.Count];
                 }
-                canvas.DrawText(MainActivity.data[0]["name"], right - leftCenterX -200, bottom + 50 , mIdPaint);
-                canvas.DrawText(MainActivity.data[0]["name"], right + leftCenterX -200, bottom + 50, mIdPaint);
-                //Console.WriteLine("Ответ: " + MainActivity.recievedJson.Name);
-                //canvas.DrawText(MainActivity.recievedJson.Name, right - leftCenterX + 30, top / 2, mIdPaint);
-                //canvas.DrawText(MainActivity.recievedJson.Name, right + leftCenterX + 30, top / 2, mIdPaint);
+
+                if (GraphicFaceTracker.checkId(MainActivity.facesList, face.Id) == false)
+                {
+                    Console.WriteLine("Прошел чек");
+                    for (int i = 0; i < MainActivity.data.Count; ++i)
+                    {
+                        drawable[i] = false;
+
+                        var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
+                        var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
+
+                        Console.WriteLine(GraphicFaceTracker.response_id.ToString() + ":" + i.ToString() + ": x = " + x0 + ", y = " + y0 + "; xface = " + left + ", yface = " + top);
+                        // Console.WriteLine("width = " + MainActivity.data[i]["width"] + ", y = " + MainActivity.data[i]["height"] + "; widthface = " + right + ", heightface = " + bottom);
+
+                        if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                        {
+
+                            MainActivity.facesList.Add(face.Id);
+                            //Console.WriteLine("Added " + i + " element to facesList" + MainActivity.facesList[i]);
+                            MainActivity.faceid_id.Add(i);
+                            drawable[i] = true;
+                            //MainActivity.facesList.Add(face.Id);
+                            //Console.WriteLine("Added new id - " + face.Id + "Count = " + MainActivity.facesList.Count);
+                        }
+
+                    }
+                    
+                }
+                
+                //facesList.Count > data.Count!!!!
+                if (MainActivity.facesList.Count > MainActivity.data.Count)
+                {                    
+                    //foreach (var item in MainActivity.facesList)
+                    //{
+                    //    Console.WriteLine("ItemInFacecList = " + item);
+                    //}
+                    MainActivity.facesList.RemoveAt(0);
+                }
+                
+
+                if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
+                {
+                    for (int i = 0; i < MainActivity.facesList.Count; ++i)
+                    {
+                        //if (!drawable[i])
+                        //continue;
+                        Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]]);
+
+                        if (MainActivity.facesList[i] == face.Id && drawable[MainActivity.faceid_id[i]])
+                        {
+                            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
+                            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left + (leftCenterX + 400), bottom + 50, mIdPaint);
+                        }
+                    }
+                }
             }
         }
     }
