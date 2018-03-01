@@ -134,11 +134,14 @@ namespace LiveCam.Droid
             textToSpeech.SetLanguage(lang);
 
             // set the speed and pitch
-            textToSpeech.SetPitch(.6f);
+            textToSpeech.SetPitch(.65f);
             textToSpeech.SetSpeechRate(.65f);
 
-
-
+            //Клик по экрану
+            mGraphicOverlay.Click += delegate 
+            {
+                //MainActivity.textToSpeech.Speak("Hello mafacka", QueueMode.Flush, null);
+            }; 
         }
 
         void TextToSpeech.IOnInitListener.OnInit(OperationResult status)

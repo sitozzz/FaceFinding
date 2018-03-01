@@ -195,6 +195,16 @@ namespace LiveCam.Droid
                 {
                     FaceGraphic.drawable = new bool[MainActivity.data.Count];
                 }
+                
+                //facesList.Count > data.Count!!!!
+                if (MainActivity.facesList.Count > MainActivity.data.Count)
+                {
+                    //foreach (var item in MainActivity.facesList)
+                    //{
+                    //    Console.WriteLine("ItemInFacecList = " + item);
+                    //}
+                    MainActivity.facesList.RemoveAt(0);
+                }
 
                 if (GraphicFaceTracker.checkId(MainActivity.facesList, face.Id) == false)
                 {
@@ -205,11 +215,15 @@ namespace LiveCam.Droid
 
                         var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
                         var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
-
-                        Console.WriteLine(GraphicFaceTracker.response_id.ToString() + ":" + i.ToString() + ": x = " + x0 + ", y = " + y0 + "; xface = " + left + ", yface = " + top);
+                        //Центр лица
+                        var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
+                        var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
+                        Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
+                        //Console.WriteLine(GraphicFaceTracker.response_id.ToString() + ":" + i.ToString() + ": x = " + x0 + ", y = " + y0 + "; xface = " + left + ", yface = " + top);
                         // Console.WriteLine("width = " + MainActivity.data[i]["width"] + ", y = " + MainActivity.data[i]["height"] + "; widthface = " + right + ", heightface = " + bottom);
 
-                        if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                        //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                        if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
                         {
 
                             MainActivity.facesList.Add(face.Id);
@@ -224,15 +238,7 @@ namespace LiveCam.Droid
                     
                 }
                 
-                //facesList.Count > data.Count!!!!
-                if (MainActivity.facesList.Count > MainActivity.data.Count)
-                {                    
-                    //foreach (var item in MainActivity.facesList)
-                    //{
-                    //    Console.WriteLine("ItemInFacecList = " + item);
-                    //}
-                    MainActivity.facesList.RemoveAt(0);
-                }
+             
                 
 
                 if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
@@ -241,12 +247,14 @@ namespace LiveCam.Droid
                     {
                         //if (!drawable[i])
                         //continue;
-                        Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]]);
+                        Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]] + "; drawable.Length = " + drawable.Length);
 
-                        if (MainActivity.facesList[i] == face.Id && drawable[MainActivity.faceid_id[i]])
+                        if (MainActivity.facesList[i] == face.Id )//&& drawable[MainActivity.faceid_id[i]])
                         {
+                            Console.WriteLine("dbag face id = " + face.Id);
                             canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
                             canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left + (leftCenterX + 400), bottom + 50, mIdPaint);
+                            break;
                         }
                     }
                 }
