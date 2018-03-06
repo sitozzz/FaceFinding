@@ -92,6 +92,7 @@ namespace LiveCam.Droid
 
         public override void Draw(Canvas canvas)
         {
+            
             //Определяем лицо
             Face face = mFace;
             if (face == null)
@@ -254,7 +255,7 @@ namespace LiveCam.Droid
                             Console.WriteLine("dbag face id = " + face.Id);
                             canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
                             canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left + (leftCenterX + 400), bottom + 50, mIdPaint);
-                            break;
+                            //break;
                         }
                     }
                 }

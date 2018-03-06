@@ -36,20 +36,31 @@ namespace LiveCam.Droid
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
     public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener
     {
+        //Список режимов приложения
+        public enum AppMode
+        {
+            Faces,
+            Things
+        };
+        //Переключатель режимов
+        public static AppMode currentAppMode;
+
         private static readonly string TAG = "FaceTracker";
 
         private CameraSource mCameraSource = null;
 
         private CameraSourcePreview mPreview;
         private GraphicOverlay mGraphicOverlay;
+
         //Массив с id лиц
         public static List<int> facesList;
         public static List<int> faceid_id;
         public static float height;
         public static float width;
+
         //Для получения данных с сервера
         public static RecievedJson recievedJson;
-        
+
         public static Dictionary<int, Dictionary<string, string>> data;
         public static string GreetingsText
         {
@@ -67,6 +78,7 @@ namespace LiveCam.Droid
         Java.Util.Locale lang;
         protected async override void OnCreate(Bundle bundle)
         {
+
             base.OnCreate(bundle);
             if (FaceGraphic.detectedNames == null)
             {
@@ -82,7 +94,8 @@ namespace LiveCam.Droid
                 MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
             }
 
-            
+            //Устанавливаем по умолчанию режим распознавания лиц
+            MainActivity.currentAppMode = AppMode.Faces;
 
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
@@ -130,7 +143,8 @@ namespace LiveCam.Droid
             //var adapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerDropDownItem, langAvailable);
             //spinLanguages.Adapter = adapter;
 
-            lang = Java.Util.Locale.Default;
+            //lang = Java.Util.Locale.Default;
+            lang = new Java.Util.Locale("ru");
             textToSpeech.SetLanguage(lang);
 
             // set the speed and pitch
@@ -138,10 +152,10 @@ namespace LiveCam.Droid
             textToSpeech.SetSpeechRate(.65f);
 
             //Клик по экрану
-            mGraphicOverlay.Click += delegate 
+            mGraphicOverlay.Click += delegate
             {
-                //MainActivity.textToSpeech.Speak("Hello mafacka", QueueMode.Flush, null);
-            }; 
+                //MainActivity.textToSpeech.Speak("О, здарова!", QueueMode.Flush, null);
+            };
         }
 
         void TextToSpeech.IOnInitListener.OnInit(OperationResult status)
@@ -370,13 +384,13 @@ namespace LiveCam.Droid
             MainActivity.data.Clear();// = null;            
             MainActivity.faceid_id.Clear();// = null;
             FaceGraphic.drawable = null;
-            
+
         }
 
         public override void OnDone()
         {
             mOverlay.Remove(mFaceGraphic);
-            
+
         }
 
         //формат передачи id
@@ -412,12 +426,12 @@ namespace LiveCam.Droid
                 var column = persons[i].Split('|');
                 //Добавляем поля
                 var person = new Dictionary<string, string>();
-                person.Add("data" , column[0]);
-                person.Add("name" , column[1]);
-                person.Add("x" , column[2]);
-                person.Add("y" , column[3]);
-                person.Add("width" , column[4]);
-                person.Add("height" , column[5]);
+                person.Add("data", column[0]);
+                person.Add("name", column[1]);
+                person.Add("x", column[2]);
+                person.Add("y", column[3]);
+                person.Add("width", column[4]);
+                person.Add("height", column[5]);
                 //Добавляем в основной словарь
                 output.Add(i, person);
             }
@@ -429,7 +443,7 @@ namespace LiveCam.Droid
             string names = "";
             for (int i = 0; i < persons.Count; i++)
             {
-                names += persons[i]["name" ];
+                names += persons[i]["name"];
                 if (i != persons.Count - 1)
                 {
                     names += ", ";
@@ -445,7 +459,7 @@ namespace LiveCam.Droid
                 System.Console.WriteLine("item = " + item);
                 if (item == serchedId)
                 {
-                    System.Console.WriteLine("checkId = true" );
+                    System.Console.WriteLine("checkId = true");
                     return true;
                 }
             }
@@ -465,14 +479,14 @@ namespace LiveCam.Droid
                     Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
 
                     bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
-                    
+
                     var bitmapData = Convert.ToBase64String(data);
                     var fileContent = new StringContent(bitmapData);
-                    
+
                     MultipartFormDataContent dataContent = new MultipartFormDataContent();
                     //dataContent.Add(fileContent, "File");
                     dataContent.Add(fileContent, "File");
-                   
+
                     using (var client = new HttpClient())
                     {
                         //Заголовки
@@ -481,37 +495,71 @@ namespace LiveCam.Droid
                         //Глубина цвета
                         dataContent.Headers.Add("color", (data.Length / ((MainActivity.width / 2) * (MainActivity.height / 2))).ToString());
 
-                        try
+                        if (MainActivity.currentAppMode == MainActivity.AppMode.Faces)
                         {
-                            var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
-                            ++response_id;
-
-                            if (response.IsSuccessStatusCode)
+                            //Faces
+                            try
                             {
-                                string recievedContent = await response.Content.ReadAsStringAsync();
+                                var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
+                                ++response_id;
 
-                                System.Console.WriteLine("content = " + recievedContent);
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    string recievedContent = await response.Content.ReadAsStringAsync();
 
-                                MainActivity.data = parseString(recievedContent);
-                                //Читаем все имена, распознанные на фото
-                                MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                                    System.Console.WriteLine("content = " + recievedContent);
+
+                                    MainActivity.data = parseString(recievedContent);
+                                    //Читаем все имена, распознанные на фото
+                                    MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                                }
+                                else
+                                {
+                                    System.Console.WriteLine("Подключение не удалось!");
+                                }
                             }
-                            else
+
+                            catch (HttpRequestException)
                             {
-                                System.Console.WriteLine("Подключение не удалось!");
+                                System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
                             }
                         }
 
-                        catch (HttpRequestException)
+                        else if (MainActivity.currentAppMode == MainActivity.AppMode.Things)
                         {
-                            System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
+                            //Things
+                            //try
+                            //{
+                            //    var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
+                            //    ++response_id;
+
+                            //    if (response.IsSuccessStatusCode)
+                            //    {
+                            //        string recievedContent = await response.Content.ReadAsStringAsync();
+
+                            //        System.Console.WriteLine("content = " + recievedContent);
+
+                            //        MainActivity.data = parseString(recievedContent);
+                            //        //Читаем все имена, распознанные на фото
+                            //        MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                            //    }
+                            //    else
+                            //    {
+                            //        System.Console.WriteLine("Подключение не удалось!");
+                            //    }
+                            //}
+
+                            //catch (HttpRequestException)
+                            //{
+                            //    System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
+                            //}
                         }
                     }
 
 
                 }
             });
-         
+
             Task.Run(async () =>
             {
                 try
