@@ -30,12 +30,21 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using Android.Speech.Tts;
+using Android.Views;
 
 namespace LiveCam.Droid
 {
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
-    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener
+    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener
     {
+        //Установка погрешности определения лиц
+        //Устанавливается с клика по экрану - сделать!!!!!
+        public static float setupXLeft;
+        public static float setupXRight;
+        public static float setupYLeft;
+        public static float setupYRight;
+        public bool leftSet;
+        public bool rightSet;
         //Список режимов приложения
         public enum AppMode
         {
@@ -48,7 +57,6 @@ namespace LiveCam.Droid
         private static readonly string TAG = "FaceTracker";
 
         private CameraSource mCameraSource = null;
-
         private CameraSourcePreview mPreview;
         private GraphicOverlay mGraphicOverlay;
 
@@ -96,6 +104,10 @@ namespace LiveCam.Droid
 
             //Устанавливаем по умолчанию режим распознавания лиц
             MainActivity.currentAppMode = AppMode.Faces;
+            
+            //Предустановка паралакса
+            leftSet = false;
+            rightSet = false;
 
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
@@ -148,7 +160,7 @@ namespace LiveCam.Droid
             textToSpeech.SetLanguage(lang);
 
             // set the speed and pitch
-            textToSpeech.SetPitch(.65f);
+            textToSpeech.SetPitch(.5f);
             textToSpeech.SetSpeechRate(.65f);
 
             //Клик по экрану
@@ -156,8 +168,17 @@ namespace LiveCam.Droid
             {
                 //MainActivity.textToSpeech.Speak("О, здарова!", QueueMode.Flush, null);
             };
+            mGraphicOverlay.SetOnTouchListener(this);
+            //mGraphicOverlay.Hover += delegate
+            //{
+            //    System.Console.WriteLine("Hower over overlays");
+            //};
+            //mGraphicOverlay.Touch += delegate 
+            //{
+                
+            //};
         }
-
+        
         void TextToSpeech.IOnInitListener.OnInit(OperationResult status)
         {
             // if we get an error, default to the default language
@@ -323,6 +344,38 @@ namespace LiveCam.Droid
                     .SetPositiveButton(Resource.String.ok, (o, e) => Finish())
                     .Show();
 
+        }
+        //Отслеживание движения указателя
+        //Сделать настройку каждого глаза по клику на экран
+        public bool OnTouch(View v, MotionEvent e)
+        {
+            float mx = e.GetX();
+            float my = e.GetY();
+            if (leftSet == false || rightSet == false)
+            {
+                switch (e.Action)
+                {
+                    case MotionEventActions.Down:
+                        mx = e.GetX();
+                        my = e.GetY();
+                        break;
+                    case MotionEventActions.Move:
+                        if (!leftSet)
+                        {
+                            mx = e.GetX();
+                            my = e.GetY();
+                            setupXLeft = mx;
+                            setupYLeft = my;
+                        }
+                        
+                        break;
+                    case MotionEventActions.Up:
+                        System.Console.WriteLine("mx = " + mx + "; my = " + my);
+                        break;
+                }
+            }
+
+            return true;
         }
     }
 

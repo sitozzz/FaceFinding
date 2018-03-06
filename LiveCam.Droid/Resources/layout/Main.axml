@@ -5,13 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true">
-    <LiveCam.Droid.CameraSourcePreview
-        android:id="@+id/preview"
+
+  <LiveCam.Droid.CameraSourcePreview
+      android:id="@+id/preview"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">
+    <LiveCam.Droid.GraphicOverlay
+        android:id="@+id/faceOverlay"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <LiveCam.Droid.GraphicOverlay
-            android:id="@+id/faceOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </LiveCam.Droid.CameraSourcePreview>
+        android:layout_height="match_parent" />
+  </LiveCam.Droid.CameraSourcePreview>
 </LinearLayout>

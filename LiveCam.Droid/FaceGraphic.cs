@@ -171,27 +171,15 @@ namespace LiveCam.Droid
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
             canvas.DrawRect(left + leftCenterX - 300, top, right + leftCenterX - 300, bottom, mBoxPaint);
-            //Id для теста (левый и правый глаз)
-            //canvas.DrawText(face.Id.ToString(), right - leftCenterX + 40, bottom, mIdPaint);
-            //canvas.DrawText(face.Id.ToString(), right + leftCenterX + 40, bottom, mIdPaint);
-
-           
 
             if (MainActivity.facesList == null)
             {
                 MainActivity.facesList = new List<int>();
                 MainActivity.faceid_id = new List<int>();
-
             }
 
             if (MainActivity.data != null && MainActivity.data.Count != 0)
             {
-                //for (int i = 0; i == MainActivity.data.Count; i++)
-                //{
-                //    MainActivity.data[i]["x" + i];
-                //}
-                //Console.WriteLine("Count = " + MainActivity.data.Count);
-
                 if (FaceGraphic.drawable == null)
                 {
                     FaceGraphic.drawable = new bool[MainActivity.data.Count];
@@ -220,27 +208,18 @@ namespace LiveCam.Droid
                         var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
                         var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
                         Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
-                        //Console.WriteLine(GraphicFaceTracker.response_id.ToString() + ":" + i.ToString() + ": x = " + x0 + ", y = " + y0 + "; xface = " + left + ", yface = " + top);
-                        // Console.WriteLine("width = " + MainActivity.data[i]["width"] + ", y = " + MainActivity.data[i]["height"] + "; widthface = " + right + ", heightface = " + bottom);
-
+                        
                         //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
                         if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
                         {
-
                             MainActivity.facesList.Add(face.Id);
-                            //Console.WriteLine("Added " + i + " element to facesList" + MainActivity.facesList[i]);
                             MainActivity.faceid_id.Add(i);
                             drawable[i] = true;
-                            //MainActivity.facesList.Add(face.Id);
-                            //Console.WriteLine("Added new id - " + face.Id + "Count = " + MainActivity.facesList.Count);
                         }
 
                     }
                     
                 }
-                
-             
-                
 
                 if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
                 {
