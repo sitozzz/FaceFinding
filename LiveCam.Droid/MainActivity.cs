@@ -104,11 +104,14 @@ namespace LiveCam.Droid
 
             //Устанавливаем по умолчанию режим распознавания лиц
             MainActivity.currentAppMode = AppMode.Faces;
-            
+
             //Предустановка паралакса
             leftSet = false;
             rightSet = false;
-
+            setupXLeft = 0.0f;
+            setupXRight = 0.0f;
+            setupYLeft = 0.0f;
+            setupYRight = 0.0f;
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
             MainActivity.height = metrics.HeightPixels;
@@ -175,10 +178,10 @@ namespace LiveCam.Droid
             //};
             //mGraphicOverlay.Touch += delegate 
             //{
-                
+
             //};
         }
-        
+
         void TextToSpeech.IOnInitListener.OnInit(OperationResult status)
         {
             // if we get an error, default to the default language
@@ -349,28 +352,56 @@ namespace LiveCam.Droid
         //Сделать настройку каждого глаза по клику на экран
         public bool OnTouch(View v, MotionEvent e)
         {
-            float mx = e.GetX();
-            float my = e.GetY();
-            if (leftSet == false || rightSet == false)
+            if (!leftSet && !rightSet)
+            {
+                MainActivity.setupXLeft = e.GetX();
+                MainActivity.setupYLeft = e.GetY();
+            }
+
+            if (leftSet && !rightSet)
+            {
+                MainActivity.setupXRight = e.GetX();
+                MainActivity.setupYRight = e.GetY();
+            }
+
+            //float mx = e.GetX();
+            //float my = e.GetY();
+            //Настраиваем отдельно левый и правый глаз
+            if (!leftSet && !rightSet)
             {
                 switch (e.Action)
                 {
                     case MotionEventActions.Down:
-                        mx = e.GetX();
-                        my = e.GetY();
+                        MainActivity.setupXLeft = e.GetX();
+                        MainActivity.setupYLeft = e.GetY();
                         break;
                     case MotionEventActions.Move:
-                        if (!leftSet)
-                        {
-                            mx = e.GetX();
-                            my = e.GetY();
-                            setupXLeft = mx;
-                            setupYLeft = my;
-                        }
-                        
+                        MainActivity.setupXLeft = e.GetX();
+                        MainActivity.setupYLeft = e.GetY();
                         break;
                     case MotionEventActions.Up:
-                        System.Console.WriteLine("mx = " + mx + "; my = " + my);
+                        MainActivity.setupXLeft = e.GetX();
+                        MainActivity.setupYLeft = e.GetY();
+                        leftSet = true;
+                        break;
+                }
+            }
+            else if (leftSet && !rightSet)
+            {
+                switch (e.Action)
+                {
+                    case MotionEventActions.Down:
+                        MainActivity.setupXRight = e.GetX();
+                        MainActivity.setupYRight = e.GetY();
+                        break;
+                    case MotionEventActions.Move:
+                        MainActivity.setupXRight = e.GetX();
+                        MainActivity.setupYRight = e.GetY();
+                        break;
+                    case MotionEventActions.Up:
+                        MainActivity.setupXRight = e.GetX();
+                        MainActivity.setupXRight = e.GetY();
+                        rightSet = true;
                         break;
                 }
             }
