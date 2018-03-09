@@ -43,8 +43,8 @@ namespace LiveCam.Droid
         public static float setupXRight;
         public static float setupYLeft;
         public static float setupYRight;
-        public bool leftSet;
-        public bool rightSet;
+        public static bool leftSet;
+        public static bool rightSet;
         //Список режимов приложения
         public enum AppMode
         {

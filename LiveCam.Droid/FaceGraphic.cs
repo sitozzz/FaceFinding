@@ -92,7 +92,7 @@ namespace LiveCam.Droid
 
         public override void Draw(Canvas canvas)
         {
-            
+
             //Определяем лицо
             Face face = mFace;
             if (face == null)
@@ -164,13 +164,25 @@ namespace LiveCam.Droid
             float rightRectX = rightCenterX + dx + (x - SCREEN_WIDTH / 2) * (FOV / SCREEN_HEIGHT) * SCREEN_HEIGHT / SOV;
             float rightRectY = rightCenterY + dy + (y - SCREEN_HEIGHT / 2) * (FOV / SCREEN_HEIGHT) * SCREEN_HEIGHT / SOV;
             //------------------------------------------------------------------------
+            //Калибровка
+            //Протестировать!
+            if (MainActivity.leftSet)
+            {
+                MainActivity.setupXLeft = MainActivity.setupXLeft - (face.Position.X - leftCenterX);
+            }
+            if (MainActivity.rightSet)
+            {
+                MainActivity.setupXRight = MainActivity.setupXRight - (face.Position.X + leftCenterX);
+            }
+
+
             //Отрисовка рамок
             //Левая
             //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left - leftCenterX + 300 - MainActivity.setupXLeft, top, right - leftCenterX + 300 - MainActivity.setupXLeft, bottom, mBoxPaint);
+            canvas.DrawRect(left - leftCenterX + 300 + MainActivity.setupXLeft, top, right - leftCenterX + 300 + MainActivity.setupXLeft, bottom, mBoxPaint);
             //Правая
             //canvas.DrawRect(left + SCREEN_WIDTH / 4.0f, top, right + SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
-            canvas.DrawRect(left + leftCenterX - 300 - MainActivity.setupXRight, top, right + leftCenterX - 300 - MainActivity.setupXRight, bottom, mBoxPaint);
+            canvas.DrawRect(left + leftCenterX - 300 + MainActivity.setupXRight, top, right + leftCenterX - 300 + MainActivity.setupXRight, bottom, mBoxPaint);
 
             if (MainActivity.facesList == null)
             {
@@ -184,7 +196,7 @@ namespace LiveCam.Droid
                 {
                     FaceGraphic.drawable = new bool[MainActivity.data.Count];
                 }
-                
+
                 //facesList.Count > data.Count!!!!
                 if (MainActivity.facesList.Count > MainActivity.data.Count)
                 {
@@ -208,7 +220,7 @@ namespace LiveCam.Droid
                         var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
                         var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
                         Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
-                        
+
                         //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
                         if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
                         {
@@ -218,7 +230,7 @@ namespace LiveCam.Droid
                         }
 
                     }
-                    
+
                 }
 
                 if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
@@ -229,7 +241,7 @@ namespace LiveCam.Droid
                         //continue;
                         Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]] + "; drawable.Length = " + drawable.Length);
 
-                        if (MainActivity.facesList[i] == face.Id )//&& drawable[MainActivity.faceid_id[i]])
+                        if (MainActivity.facesList[i] == face.Id)//&& drawable[MainActivity.faceid_id[i]])
                         {
                             Console.WriteLine("dbag face id = " + face.Id);
                             canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
