@@ -23,6 +23,7 @@ using System.IO;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Runtime.InteropServices;
 using Android.Graphics;
 using Java.IO;
@@ -31,6 +32,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Android.Speech.Tts;
 using Android.Views;
+using System.Web;
 
 namespace LiveCam.Droid
 {
@@ -70,6 +72,8 @@ namespace LiveCam.Droid
         public static RecievedJson recievedJson;
 
         public static Dictionary<int, Dictionary<string, string>> data;
+        public static JObject facesData;
+
         public static string GreetingsText
         {
             get;
@@ -495,13 +499,19 @@ namespace LiveCam.Droid
             }
             return outputString;
         }
-
+        //Парсинг json'a
+        public JObject parseJsonData(string json)
+        {
+            json = json.Replace('"', '\"');
+            json = json.Insert(0, "{\"json\": ");
+            json = json.Insert(json.Length, "}");
+            return JObject.Parse(json);
+        }
         //Отправка фотографии на сервер и получение JSON'a
         public Dictionary<int, Dictionary<string, string>> parseString(string json)
         {
             Dictionary<int, Dictionary<string, string>> output = new Dictionary<int, Dictionary<string, string>>();
             var persons = json.Split(';');
-            //System.Console.WriteLine("a length = " + a.Length);
             for (int i = 0; i < persons.Length; i++)
             {
                 if (persons[i] == "")
@@ -553,11 +563,11 @@ namespace LiveCam.Droid
 
         public void OnPictureTaken(byte[] data)
         {
-            //System.Console.WriteLine("ListFaces = " + ListToString(MainActivity.facesList));
             Task.Run(async () =>
             {
                 if (data != null)
                 {
+                    //parseJsonData();
                     //Stream juststream = ContentResolver.OpenInputStream();
                     MemoryStream stream = new MemoryStream();
                     Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
@@ -590,9 +600,12 @@ namespace LiveCam.Droid
                                 if (response.IsSuccessStatusCode)
                                 {
                                     string recievedContent = await response.Content.ReadAsStringAsync();
-
                                     System.Console.WriteLine("content = " + recievedContent);
-
+                                    var catchedJson = parseJsonData(recievedContent);
+                                    MainActivity.facesData = catchedJson;
+                                    //System.Console.WriteLine("trying" + catchedJson["json"]);
+                                    //var a = catchedJson["json"];
+                                    
                                     MainActivity.data = parseString(recievedContent);
                                     //Читаем все имена, распознанные на фото
                                     MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
