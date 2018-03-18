@@ -190,7 +190,7 @@ namespace LiveCam.Droid
                 MainActivity.faceid_id = new List<int>();
             }
 
-            if (MainActivity.facesData != null)//(MainActivity.data != null && MainActivity.data.Count != 0)
+            if (MainActivity.data != null && MainActivity.data.Count != 0)//(MainActivity.facesData != null)
             {
                 if (FaceGraphic.drawable == null)
                 {
@@ -210,45 +210,45 @@ namespace LiveCam.Droid
                 if (GraphicFaceTracker.checkId(MainActivity.facesList, face.Id) == false)
                 {
                     Console.WriteLine("Прошел чек");
-                    //Переделываем цикл отрисовки
-                    int i = 0;
-                    foreach (var item in MainActivity.facesData["json"])
-                    {
-                        
-                        var x0 = Convert.ToInt32(item["roi"][0]);
-                        var y0 = Convert.ToInt32(item["roi"][1]);
-                        //Центр лица
-                        var xCenter = (x0 + Convert.ToInt32(item["roi"][2]) / 2) - 100;
-                        var yCenter = (y0 + Convert.ToInt32(item["roi"][3]) / 2);
-
-                        if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
-                        {
-                            MainActivity.facesList.Add(face.Id);
-                            MainActivity.faceid_id.Add(i);
-                            drawable[i] = true;
-                        }
-                        i++;
-                    }
-                    //for (int i = 0; i < MainActivity.data.Count; ++i)
+                    ////Переделываем цикл отрисовки
+                    //int i = 0;
+                    //foreach (var item in MainActivity.facesData["json"])
                     //{
-                    //    drawable[i] = false;
-
-                    //    var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
-                    //    var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
+                        
+                    //    var x0 = Convert.ToInt32(item["roi"][0]);
+                    //    var y0 = Convert.ToInt32(item["roi"][1]);
                     //    //Центр лица
-                    //    var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
-                    //    var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
-                    //    Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
+                    //    var xCenter = (x0 + Convert.ToInt32(item["roi"][2]) / 2) - 100;
+                    //    var yCenter = (y0 + Convert.ToInt32(item["roi"][3]) / 2);
 
-                    //    //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
                     //    if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
                     //    {
                     //        MainActivity.facesList.Add(face.Id);
                     //        MainActivity.faceid_id.Add(i);
                     //        drawable[i] = true;
                     //    }
-
+                    //    i++;
                     //}
+                    for (int i = 0; i < MainActivity.data.Count; ++i)
+                    {
+                        drawable[i] = false;
+
+                        var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
+                        var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
+                        //Центр лица
+                        var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
+                        var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
+                        Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
+
+                        //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                        if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
+                        {
+                            MainActivity.facesList.Add(face.Id);
+                            MainActivity.faceid_id.Add(i);
+                            drawable[i] = true;
+                        }
+
+                    }
 
                 }
 

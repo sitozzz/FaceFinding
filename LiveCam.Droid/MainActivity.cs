@@ -507,27 +507,51 @@ namespace LiveCam.Droid
             json = json.Insert(json.Length, "}");
             return JObject.Parse(json);
         }
+        public int JObjectCount(JObject jObject)
+        {
+            int count = 0;
+            foreach (var item in jObject["json"])
+            {
+                ++count;
+            }
+            return count;
+        }
         //Отправка фотографии на сервер и получение JSON'a
         public Dictionary<int, Dictionary<string, string>> parseString(string json)
         {
+            var jobj = parseJsonData(json);
             Dictionary<int, Dictionary<string, string>> output = new Dictionary<int, Dictionary<string, string>>();
-            var persons = json.Split(';');
-            for (int i = 0; i < persons.Length; i++)
-            {
-                if (persons[i] == "")
-                    continue;
+            //var persons = json.Split(';');
+            //for (int i = 0; i < persons.Length; i++)
+            //{
+            //    if (persons[i] == "")
+            //        continue;
 
-                var column = persons[i].Split('|');
-                //Добавляем поля
+            //    var column = persons[i].Split('|');
+            //    //Добавляем поля
+            //    var person = new Dictionary<string, string>();
+            //    person.Add("data", column[0]);
+            //    person.Add("name", column[1]);
+            //    person.Add("x", column[2]);
+            //    person.Add("y", column[3]);
+            //    person.Add("width", column[4]);
+            //    person.Add("height", column[5]);
+            //    //Добавляем в основной словарь
+            //    output.Add(i, person);
+            //}
+            int i = 0;
+            foreach (var item in jobj["json"])
+            {
                 var person = new Dictionary<string, string>();
-                person.Add("data", column[0]);
-                person.Add("name", column[1]);
-                person.Add("x", column[2]);
-                person.Add("y", column[3]);
-                person.Add("width", column[4]);
-                person.Add("height", column[5]);
+                person.Add("data", item["date"].ToString());
+                person.Add("name", item["name"].ToString());
+                person.Add("x", item["roi"][0].ToString());
+                person.Add("y", item["roi"][1].ToString());
+                person.Add("width", item["roi"][2].ToString());
+                person.Add("height", item["roi"][3].ToString());
                 //Добавляем в основной словарь
                 output.Add(i, person);
+                ++i;
             }
             return output;
         }
