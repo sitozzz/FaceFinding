@@ -543,7 +543,7 @@ namespace LiveCam.Droid
             foreach (var item in jobj["json"])
             {
                 var person = new Dictionary<string, string>();
-                person.Add("data", item["date"].ToString());
+                person.Add("data", item["time"].ToString());
                 person.Add("name", item["name"].ToString());
                 person.Add("x", item["roi"][0].ToString());
                 person.Add("y", item["roi"][1].ToString());
