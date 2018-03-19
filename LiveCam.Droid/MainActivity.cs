@@ -33,6 +33,7 @@ using System.Linq;
 using Android.Speech.Tts;
 using Android.Views;
 using System.Web;
+using System.Net.Http.Headers;
 
 namespace LiveCam.Droid
 {
@@ -107,7 +108,7 @@ namespace LiveCam.Droid
             }
 
             //Устанавливаем по умолчанию режим распознавания лиц
-            MainActivity.currentAppMode = AppMode.Faces;
+            MainActivity.currentAppMode = AppMode.Things;
 
             //Предустановка паралакса
             leftSet = false;
@@ -591,34 +592,31 @@ namespace LiveCam.Droid
             {
                 if (data != null)
                 {
-                    //parseJsonData();
-                    //Stream juststream = ContentResolver.OpenInputStream();
-                    MemoryStream stream = new MemoryStream();
-                    Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
-
-                    bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
-
-                    var bitmapData = Convert.ToBase64String(data);
-                    var fileContent = new StringContent(bitmapData);
-
-                    MultipartFormDataContent dataContent = new MultipartFormDataContent();
-                    //dataContent.Add(fileContent, "File");
-                    dataContent.Add(fileContent, "File");
-
                     using (var client = new HttpClient())
                     {
-                        //Заголовки
-                        dataContent.Headers.Add("width", (MainActivity.width / 2).ToString());
-                        dataContent.Headers.Add("height", (MainActivity.height / 2).ToString());
-                        //Глубина цвета
-                        dataContent.Headers.Add("color", (data.Length / ((MainActivity.width / 2) * (MainActivity.height / 2))).ToString());
-
+                        //Faces
                         if (MainActivity.currentAppMode == MainActivity.AppMode.Faces)
                         {
-                            //Faces
+                            MemoryStream stream = new MemoryStream();
+                            Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
+
+                            bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+
+                            var bitmapData = Convert.ToBase64String(data);
+                            var fileContent = new StringContent(bitmapData);
+
+                            MultipartFormDataContent dataContent = new MultipartFormDataContent();
+                            //dataContent.Add(fileContent, "File");
+                            dataContent.Add(fileContent, "File");
+                            //Заголовки
+                            dataContent.Headers.Add("width", (MainActivity.width / 2).ToString());
+                            dataContent.Headers.Add("height", (MainActivity.height / 2).ToString());
+                            //Глубина цвета
+                            dataContent.Headers.Add("color", (data.Length / ((MainActivity.width / 2) * (MainActivity.height / 2))).ToString());
+ 
                             try
                             {
-                                var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
+                                var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);
                                 ++response_id;
 
                                 if (response.IsSuccessStatusCode)
@@ -645,35 +643,34 @@ namespace LiveCam.Droid
                                 System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
                             }
                         }
-
+                        //Describe Things
                         else if (MainActivity.currentAppMode == MainActivity.AppMode.Things)
                         {
-                            //Things
-                            //try
-                            //{
-                            //    var response = await client.PostAsync(new Uri("http://192.168.2.17:9990"), dataContent);//content);
-                            //    ++response_id;
+                            var dataContent = new MultipartFormDataContent();
+                            var imageContent = new ByteArrayContent(data);
+                            imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+                            dataContent.Add(imageContent, "describe", "image.jpg");
+                            try
+                            {
+                                var response = await client.PostAsync(new Uri("http://192.168.2.117:55555"), dataContent);
+                                
+                                if (response.IsSuccessStatusCode)
+                                {                                    
+                                    string recievedContent = await response.Content.ReadAsStringAsync();
 
-                            //    if (response.IsSuccessStatusCode)
-                            //    {
-                            //        string recievedContent = await response.Content.ReadAsStringAsync();
+                                    System.Console.WriteLine("content = " + recievedContent);
+                                    //MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                                }
+                                else
+                                {
+                                    System.Console.WriteLine("Подключение не удалось!");
+                                }
+                            }
 
-                            //        System.Console.WriteLine("content = " + recievedContent);
-
-                            //        MainActivity.data = parseString(recievedContent);
-                            //        //Читаем все имена, распознанные на фото
-                            //        MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
-                            //    }
-                            //    else
-                            //    {
-                            //        System.Console.WriteLine("Подключение не удалось!");
-                            //    }
-                            //}
-
-                            //catch (HttpRequestException)
-                            //{
-                            //    System.Console.WriteLine("Подключение не удалось! HttpRequetsExeption");
-                            //}
+                            catch (HttpRequestException)
+                            {
+                                System.Console.WriteLine("HttpRequetsExeption");
+                            }
                         }
                     }
 
