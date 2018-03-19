@@ -56,7 +56,7 @@ namespace LiveCam.Droid
         };
         //Переключатель режимов
         public static AppMode currentAppMode;
-
+        public static string ThingsString;
         private static readonly string TAG = "FaceTracker";
 
         private CameraSource mCameraSource = null;
@@ -106,7 +106,7 @@ namespace LiveCam.Droid
             {
                 MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
             }
-
+            ThingsString = "";
             //Устанавливаем по умолчанию режим распознавания лиц
             MainActivity.currentAppMode = AppMode.Things;
 
@@ -355,62 +355,68 @@ namespace LiveCam.Droid
         }
         //Отслеживание движения указателя
         //Сделать настройку каждого глаза по клику на экран
+        
         public bool OnTouch(View v, MotionEvent e)
         {
-            if (!leftSet && !rightSet)
+            //Пока что выключено
+            if (false)
             {
-                MainActivity.setupXLeft = e.GetX();
-                MainActivity.setupYLeft = e.GetY();
-            }
-
-            if (leftSet && !rightSet)
-            {
-                MainActivity.setupXRight = e.GetX();
-                MainActivity.setupYRight = e.GetY();
-            }
-
-            //float mx = e.GetX();
-            //float my = e.GetY();
-            //Настраиваем отдельно левый и правый глаз
-            if (!leftSet && !rightSet)
-            {
-                switch (e.Action)
+                if (!leftSet && !rightSet)
                 {
-                    case MotionEventActions.Down:
-                        MainActivity.setupXLeft = e.GetX();
-                        MainActivity.setupYLeft = e.GetY();
-                        break;
-                    case MotionEventActions.Move:
-                        MainActivity.setupXLeft = e.GetX();
-                        MainActivity.setupYLeft = e.GetY();
-                        break;
-                    case MotionEventActions.Up:
-                        MainActivity.setupXLeft = e.GetX();
-                        MainActivity.setupYLeft = e.GetY();
-                        leftSet = true;
-                        break;
+                    MainActivity.setupXLeft = e.GetX();
+                    MainActivity.setupYLeft = e.GetY();
                 }
-            }
-            else if (leftSet && !rightSet)
-            {
-                switch (e.Action)
-                {
-                    case MotionEventActions.Down:
-                        MainActivity.setupXRight = e.GetX();
-                        MainActivity.setupYRight = e.GetY();
-                        break;
-                    case MotionEventActions.Move:
-                        MainActivity.setupXRight = e.GetX();
-                        MainActivity.setupYRight = e.GetY();
-                        break;
-                    case MotionEventActions.Up:
-                        MainActivity.setupXRight = e.GetX();
-                        MainActivity.setupXRight = e.GetY();
-                        rightSet = true;
-                        break;
-                }
-            }
 
+                if (leftSet && !rightSet)
+                {
+                    MainActivity.setupXRight = e.GetX();
+                    MainActivity.setupYRight = e.GetY();
+                }
+
+                //float mx = e.GetX();
+                //float my = e.GetY();
+                //Настраиваем отдельно левый и правый глаз
+                if (!leftSet && !rightSet)
+                {
+                    switch (e.Action)
+                    {
+                        case MotionEventActions.Down:
+                            MainActivity.setupXLeft = e.GetX();
+                            MainActivity.setupYLeft = e.GetY();
+                            break;
+                        case MotionEventActions.Move:
+                            MainActivity.setupXLeft = e.GetX();
+                            MainActivity.setupYLeft = e.GetY();
+                            break;
+                        case MotionEventActions.Up:
+                            MainActivity.setupXLeft = e.GetX();
+                            MainActivity.setupYLeft = e.GetY();
+                            leftSet = true;
+                            break;
+                    }
+                }
+                else if (leftSet && !rightSet)
+                {
+                    switch (e.Action)
+                    {
+                        case MotionEventActions.Down:
+                            MainActivity.setupXRight = e.GetX();
+                            MainActivity.setupYRight = e.GetY();
+                            break;
+                        case MotionEventActions.Move:
+                            MainActivity.setupXRight = e.GetX();
+                            MainActivity.setupYRight = e.GetY();
+                            break;
+                        case MotionEventActions.Up:
+                            MainActivity.setupXRight = e.GetX();
+                            MainActivity.setupXRight = e.GetY();
+                            rightSet = true;
+                            break;
+                    }
+                }
+
+                return true;
+            }
             return true;
         }
     }
@@ -501,13 +507,23 @@ namespace LiveCam.Droid
             return outputString;
         }
         //Парсинг json'a
-        public JObject parseJsonData(string json)
+        public JObject parseJsonData(string json, MainActivity.AppMode appMode)
         {
-            json = json.Replace('"', '\"');
-            json = json.Insert(0, "{\"json\": ");
-            json = json.Insert(json.Length, "}");
-            return JObject.Parse(json);
+            if (appMode == MainActivity.AppMode.Faces)
+            {
+                json = json.Replace('"', '\"');
+                json = json.Insert(0, "{\"json\": ");
+                json = json.Insert(json.Length, "}");
+                return JObject.Parse(json);
+            }
+            else
+            {
+                return JObject.Parse(json);
+            }
         }
+        
+
+
         public int JObjectCount(JObject jObject)
         {
             int count = 0;
@@ -520,7 +536,7 @@ namespace LiveCam.Droid
         //Отправка фотографии на сервер и получение JSON'a
         public Dictionary<int, Dictionary<string, string>> parseString(string json)
         {
-            var jobj = parseJsonData(json);
+            var jobj = parseJsonData(json, MainActivity.currentAppMode);
             Dictionary<int, Dictionary<string, string>> output = new Dictionary<int, Dictionary<string, string>>();
             //var persons = json.Split(';');
             //for (int i = 0; i < persons.Length; i++)
@@ -623,7 +639,7 @@ namespace LiveCam.Droid
                                 {
                                     string recievedContent = await response.Content.ReadAsStringAsync();
                                     System.Console.WriteLine("content = " + recievedContent);
-                                    var catchedJson = parseJsonData(recievedContent);
+                                    var catchedJson = parseJsonData(recievedContent, MainActivity.currentAppMode);
                                     MainActivity.facesData = catchedJson;
                                     //System.Console.WriteLine("trying" + catchedJson["json"]);
                                     //var a = catchedJson["json"];
@@ -659,6 +675,9 @@ namespace LiveCam.Droid
                                     string recievedContent = await response.Content.ReadAsStringAsync();
 
                                     System.Console.WriteLine("content = " + recievedContent);
+                                    var result = parseJsonData(recievedContent, MainActivity.currentAppMode);
+                                    MainActivity.ThingsString = result["describe"][0]["res"].ToString();
+                                    System.Console.WriteLine("THSTR" + MainActivity.ThingsString);
                                     //MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
                                 }
                                 else
