@@ -34,11 +34,12 @@ using Android.Speech.Tts;
 using Android.Views;
 using System.Web;
 using System.Net.Http.Headers;
+using System.Timers;
 
 namespace LiveCam.Droid
 {
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
-    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener
+    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener, View.IOnKeyListener
     {
         //Установка погрешности определения лиц
         //Устанавливается с клика по экрану - сделать!!!!!
@@ -80,7 +81,8 @@ namespace LiveCam.Droid
             get;
             set;
         }
-
+        public static Timer timer;
+        public static int count;
         private static readonly int RC_HANDLE_GMS = 9001;
         // permission request codes need to be < 256
         private static readonly int RC_HANDLE_CAMERA_PERM = 2;
@@ -106,6 +108,13 @@ namespace LiveCam.Droid
             {
                 MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
             }
+            //Таймер для фотографий
+            //Счетчик
+            count = 0;
+            //Интервал - 1 сек
+            timer.Interval = 1000;
+            timer.Elapsed += Timer_Elapsed;
+            
             ThingsString = "";
             //Устанавливаем по умолчанию режим распознавания лиц
             MainActivity.currentAppMode = AppMode.Things;
@@ -162,7 +171,7 @@ namespace LiveCam.Droid
 
             //var adapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerDropDownItem, langAvailable);
             //spinLanguages.Adapter = adapter;
-
+            
             //lang = Java.Util.Locale.Default;
             lang = new Java.Util.Locale("ru");
             textToSpeech.SetLanguage(lang);
@@ -170,11 +179,17 @@ namespace LiveCam.Droid
             // set the speed and pitch
             textToSpeech.SetPitch(.5f);
             textToSpeech.SetSpeechRate(.65f);
-
+            bool timerOn = false;
             //Клик по экрану
             mGraphicOverlay.Click += delegate
             {
-                //MainActivity.textToSpeech.Speak("О, здарова!", QueueMode.Flush, null);
+                if (!timerOn)
+                {
+                    timer.Start();
+                }
+                //Доделать произношение чтение текста
+                
+                
             };
             mGraphicOverlay.SetOnTouchListener(this);
             //mGraphicOverlay.Hover += delegate
@@ -185,6 +200,15 @@ namespace LiveCam.Droid
             //{
 
             //};
+        }
+
+        //Инкремент таймера
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (MainActivity.count == 0)
+            {
+                MainActivity.count++;
+            }
         }
 
         void TextToSpeech.IOnInitListener.OnInit(OperationResult status)
@@ -354,8 +378,7 @@ namespace LiveCam.Droid
 
         }
         //Отслеживание движения указателя
-        //Сделать настройку каждого глаза по клику на экран
-        
+        //Сделать настройку каждого глаза по клику на экран      
         public bool OnTouch(View v, MotionEvent e)
         {
             //Пока что выключено
@@ -419,6 +442,15 @@ namespace LiveCam.Droid
             }
             return true;
         }
+        //Вроде обработка кнопок
+        bool View.IOnKeyListener.OnKey(View v, Keycode keyCode, KeyEvent e)
+        {
+            //switch (keyCode)
+            //{
+            //    default:
+            //}
+            return true;
+        }
     }
 
 
@@ -426,8 +458,8 @@ namespace LiveCam.Droid
     {
         private GraphicOverlay mOverlay;
         private FaceGraphic mFaceGraphic;
-        private CameraSource mCameraSource = null;
-        private bool isProcessing = false;
+        public static CameraSource mCameraSource = null;
+        public static bool isProcessing = false;
         public static int response_id = 0;
 
         public GraphicFaceTracker(GraphicOverlay overlay, CameraSource cameraSource = null)
@@ -462,6 +494,31 @@ namespace LiveCam.Droid
                 //mCameraSource.TakePicture(null, this);
             }
             //System.Console.WriteLine("Id лица" + MainActivity.facesList[0].ToString());
+        }
+        //Съемка каждую секунду
+        public void CustomTakePicture()
+        {
+            if (MainActivity.currentAppMode == MainActivity.AppMode.Things && MainActivity.count == 1)
+            {
+                if (mCameraSource != null && !isProcessing)
+                {
+                    try
+                    {
+                        mCameraSource.TakePicture(null, this);
+
+                    }
+                    catch (RuntimeException)
+                    {
+
+                        System.Console.WriteLine("TakePicture failed!");
+                    }
+                    finally
+                    {
+                        MainActivity.count = 0;
+                    }
+
+                }
+            }
         }
         public override void OnUpdate(Detector.Detections detections, Java.Lang.Object item)
         {
@@ -522,8 +579,6 @@ namespace LiveCam.Droid
             }
         }
         
-
-
         public int JObjectCount(JObject jObject)
         {
             int count = 0;
