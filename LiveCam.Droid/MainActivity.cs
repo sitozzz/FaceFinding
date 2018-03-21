@@ -39,7 +39,7 @@ using System.Timers;
 namespace LiveCam.Droid
 {
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
-    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener, View.IOnKeyListener
+    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener, View.IOnKeyListener, CameraSource.IPictureCallback
     {
         //Установка погрешности определения лиц
         //Устанавливается с клика по экрану - сделать!!!!!
@@ -109,6 +109,7 @@ namespace LiveCam.Droid
                 MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
             }
             //Таймер для фотографий
+            timer = new Timer();
             //Счетчик
             count = 0;
             //Интервал - 1 сек
@@ -172,26 +173,27 @@ namespace LiveCam.Droid
             //var adapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerDropDownItem, langAvailable);
             //spinLanguages.Adapter = adapter;
             
-            //lang = Java.Util.Locale.Default;
-            lang = new Java.Util.Locale("ru");
+            lang = Java.Util.Locale.Default;
+            //lang = new Java.Util.Locale("ru");
             textToSpeech.SetLanguage(lang);
 
             // set the speed and pitch
             textToSpeech.SetPitch(.5f);
             textToSpeech.SetSpeechRate(.65f);
-            bool timerOn = false;
+            //bool timerOn = false;
             //Клик по экрану
             mGraphicOverlay.Click += delegate
             {
-                if (!timerOn)
-                {
-                    timer.Start();
-                }
-                //Доделать произношение чтение текста
-                
-                
+                //System.Console.WriteLine("click");
+                //timer.Start();
+
+                count++;
+                textToSpeech.Speak(ThingsString, QueueMode.Flush, null);
+                count = 0;
+                                
             };
-            mGraphicOverlay.SetOnTouchListener(this);
+            timer.Start();
+            //mGraphicOverlay.SetOnTouchListener(this);
             //mGraphicOverlay.Hover += delegate
             //{
             //    System.Console.WriteLine("Hower over overlays");
@@ -208,6 +210,17 @@ namespace LiveCam.Droid
             if (MainActivity.count == 0)
             {
                 MainActivity.count++;
+                if (mCameraSource != null && !GraphicFaceTracker.isProcessing)
+                {
+                    System.Console.WriteLine("Щелк");
+                    mCameraSource.TakePicture(null, this);
+                }
+            }
+            //Остановка при смене режима
+            if (MainActivity.currentAppMode != AppMode.Things)
+            {
+                timer.Stop();
+                MainActivity.count = 0;
             }
         }
 
@@ -450,6 +463,65 @@ namespace LiveCam.Droid
             //    default:
             //}
             return true;
+        }
+
+        public void OnPictureTaken(byte[] data)
+        {
+            Task.Run(async () =>
+            {
+                if (data != null)
+                {
+                    using (var client = new HttpClient())
+                    {
+                        //Describe Things
+                        if (MainActivity.currentAppMode == MainActivity.AppMode.Things)
+                        {
+                            var dataContent = new MultipartFormDataContent();
+                            var imageContent = new ByteArrayContent(data);
+                            imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+                            dataContent.Add(imageContent, "describe", "image.jpg");
+                            try
+                            {
+                                var response = await client.PostAsync(new Uri("http://192.168.2.117:55555"), dataContent);
+
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    string recievedContent = await response.Content.ReadAsStringAsync();
+
+                                    System.Console.WriteLine("content = " + recievedContent);
+                                    var result = JObject.Parse(recievedContent);
+                                    MainActivity.ThingsString = result["describe"][0]["res"].ToString();
+                                    System.Console.WriteLine("THSTR" + MainActivity.ThingsString);
+                                    MainActivity.count = 0;
+                                    //MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                                }
+                                else
+                                {
+                                    System.Console.WriteLine("Подключение не удалось!");
+                                }
+                            }
+
+                            catch (HttpRequestException)
+                            {
+                                System.Console.WriteLine("HttpRequetsExeption");
+                            }
+                        }
+                    }
+                }
+            });
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    GraphicFaceTracker.isProcessing = true;
+                }
+
+                finally
+                {
+                    GraphicFaceTracker.isProcessing = false;
+                }
+            });
         }
     }
 
