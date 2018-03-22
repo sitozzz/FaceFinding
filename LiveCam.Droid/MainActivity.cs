@@ -38,7 +38,7 @@ using System.Timers;
 
 namespace LiveCam.Droid
 {
-    [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.FullSensor)]
+    [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.Landscape)]
     public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener, View.IOnKeyListener, CameraSource.IPictureCallback
     {
         //Установка погрешности определения лиц
