@@ -81,6 +81,7 @@ namespace LiveCam.Droid
             get;
             set;
         }
+        public static int faceCounter = 0;
         public static Timer timer;
         public static int count;
         private static readonly int RC_HANDLE_GMS = 9001;
@@ -118,7 +119,7 @@ namespace LiveCam.Droid
             
             ThingsString = "";
             //Устанавливаем по умолчанию режим распознавания лиц
-            MainActivity.currentAppMode = AppMode.Things;
+            MainActivity.currentAppMode = AppMode.Faces;
 
             //Предустановка паралакса
             leftSet = false;
@@ -181,18 +182,30 @@ namespace LiveCam.Droid
             textToSpeech.SetPitch(.5f);
             textToSpeech.SetSpeechRate(.65f);
             //bool timerOn = false;
-            //Клик по экрану
+            //Клик по экрану - смена режима
             mGraphicOverlay.Click += delegate
             {
-                //System.Console.WriteLine("click");
-                //timer.Start();
-
-                count++;
-                textToSpeech.Speak(ThingsString, QueueMode.Flush, null);
-                count = 0;
-                                
+                if (currentAppMode == AppMode.Things)
+                {
+                    timer.Stop();
+                    MainActivity.count = 0;
+                    MainActivity.currentAppMode = AppMode.Faces;
+                    var lang = new Java.Util.Locale("ru");
+                    textToSpeech.SetLanguage(lang);
+                    System.Console.WriteLine("Current app mode = " + currentAppMode);
+                    Toast.MakeText(this, "Face Detecting", ToastLength.Short).Show();
+                }
+                else
+                {
+                    MainActivity.currentAppMode = AppMode.Things;
+                    lang = Java.Util.Locale.Default;
+                    textToSpeech.SetLanguage(lang);
+                    timer.Start();
+                    System.Console.WriteLine("Current app mode = " + currentAppMode);
+                    Toast.MakeText(this, "Things Describing", ToastLength.Short).Show();
+                }
             };
-            timer.Start();
+            //timer.Start();
             //mGraphicOverlay.SetOnTouchListener(this);
             //mGraphicOverlay.Hover += delegate
             //{
@@ -204,6 +217,23 @@ namespace LiveCam.Droid
             //};
         }
 
+        //Физическая кнопка назад
+        public override void OnBackPressed()
+        {
+            //base.OnBackPressed();
+            if (currentAppMode == AppMode.Things)
+            {
+                speakWhatUSee();
+            }
+            
+        }
+              
+        public void speakWhatUSee()
+        {
+            count++;
+            textToSpeech.Speak(ThingsString, QueueMode.Flush, null);
+            count = 0;
+        }
         //Инкремент таймера
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
@@ -233,7 +263,7 @@ namespace LiveCam.Droid
             if (status == OperationResult.Success)
                 textToSpeech.SetLanguage(lang);
         }
-
+        
         protected override void OnActivityResult(int req, Result res, Intent data)
         {
             if (req == NeedLang)
@@ -455,13 +485,70 @@ namespace LiveCam.Droid
             }
             return true;
         }
+        //Смена режима по кнопке увеличения громкости
+        //public override bool OnKeyDown([GeneratedEnum] Keycode keyCode, KeyEvent e)
+        //{
+        //    if (keyCode == Keycode.VolumeUp)
+        //    {
+        //        if (currentAppMode == AppMode.Things)
+        //        {
+        //            timer.Stop();
+        //            MainActivity.count = 0;
+        //            MainActivity.currentAppMode = AppMode.Faces;
+        //            System.Console.WriteLine("Current app mode = "  + currentAppMode);
+                    
+        //        }
+        //        else
+        //        {
+        //            MainActivity.currentAppMode = AppMode.Things;
+        //            timer.Start();
+        //            System.Console.WriteLine("Current app mode = " + currentAppMode);
+        //        }
+        //        //Блокируем основную функцию переназначенной кнопки
+        //        return true;
+        //    }
+        //    else
+        //    {
+        //        return base.OnKeyDown(keyCode, e);
+        //    }
+            
+        //}
+
         //Вроде обработка кнопок
         bool View.IOnKeyListener.OnKey(View v, Keycode keyCode, KeyEvent e)
         {
-            //switch (keyCode)
-            //{
-            //    default:
-            //}
+            switch (keyCode)
+            {
+                //Не работает
+                case Keycode.ButtonA:
+                    System.Console.WriteLine("Button A was pressed");
+                    break;
+                case Keycode.ButtonB:
+                    System.Console.WriteLine("Button B was pressed");
+                    break;
+                case Keycode.ButtonC:
+                    System.Console.WriteLine("Button C was pressed");
+                    break;
+                case Keycode.ButtonL1:
+                    break;
+                case Keycode.ButtonL2:
+                    break;
+                case Keycode.ButtonMode:
+                    break;
+                case Keycode.ButtonR1:
+                    break;
+                case Keycode.ButtonR2:
+                    break;
+                
+                case Keycode.ButtonX:
+                    break;
+                case Keycode.ButtonY:
+                    break;
+                case Keycode.ButtonZ:
+                    break;
+                default:
+                    break;
+            }
             return true;
         }
 
@@ -546,6 +633,15 @@ namespace LiveCam.Droid
             mFaceGraphic.SetId(id);
             if (mCameraSource != null && !isProcessing)
             {
+                if (MainActivity.faceCounter != 1)
+                {
+                    MainActivity.faceCounter++;
+                }
+                else
+                {
+                    MainActivity.faceCounter = 0;
+                }
+                
                 if (MainActivity.facesList != null && MainActivity.data != null)
                 {
                     if (MainActivity.facesList.Count != MainActivity.data.Count)
@@ -560,7 +656,6 @@ namespace LiveCam.Droid
                 }
                 catch (RuntimeException)
                 {
-
                     System.Console.WriteLine("TakePicture failed!");
                 }
                 //mCameraSource.TakePicture(null, this);
@@ -711,6 +806,7 @@ namespace LiveCam.Droid
                     names += ", ";
                 }
             }
+            //System.Console.WriteLine("Names = " + names);
             return names;
         }
 
@@ -764,16 +860,24 @@ namespace LiveCam.Droid
 
                                 if (response.IsSuccessStatusCode)
                                 {
+                                    MainActivity.data = new Dictionary<int, Dictionary<string, string>>();
                                     string recievedContent = await response.Content.ReadAsStringAsync();
                                     System.Console.WriteLine("content = " + recievedContent);
                                     var catchedJson = parseJsonData(recievedContent, MainActivity.currentAppMode);
                                     MainActivity.facesData = catchedJson;
                                     //System.Console.WriteLine("trying" + catchedJson["json"]);
                                     //var a = catchedJson["json"];
-                                    
-                                    MainActivity.data = parseString(recievedContent);
+
+                                    //MainActivity.data = parseString(recievedContent);
+                                    //MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
                                     //Читаем все имена, распознанные на фото
-                                    MainActivity.textToSpeech.Speak(sayAllNames(MainActivity.data), QueueMode.Flush, null);
+                                    MainActivity.data = parseString(recievedContent);
+                                    if (MainActivity.faceCounter == 1 && MainActivity.data.Count != 0)
+                                    {
+                                        string name = sayAllNames(MainActivity.data);
+                                        System.Console.WriteLine("Name = " + name);
+                                        MainActivity.textToSpeech.Speak(name, QueueMode.Flush, null);
+                                    }
                                 }
                                 else
                                 {

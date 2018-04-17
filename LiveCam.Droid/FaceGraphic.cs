@@ -175,7 +175,6 @@ namespace LiveCam.Droid
                 MainActivity.setupXRight = MainActivity.setupXRight - (face.Position.X + leftCenterX);
             }
 
-
             //Отрисовка рамок
             //Левая
             //canvas.DrawRect(left - SCREEN_WIDTH / 4.0f, top, right - SCREEN_WIDTH / 4.0f, bottom, mBoxPaint);
