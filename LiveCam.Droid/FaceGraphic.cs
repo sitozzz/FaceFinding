@@ -49,7 +49,7 @@ namespace LiveCam.Droid
         private volatile Face mFace;
         private int mFaceId;
         private float mFaceHappiness;
-
+        public static volatile string displayedName = "";
         public static Dictionary<int, string> detectedNames;
         public static bool[] drawable;
         public FaceGraphic(GraphicOverlay overlay) : base(overlay)
@@ -205,69 +205,99 @@ namespace LiveCam.Droid
                     //}
                     MainActivity.facesList.RemoveAt(0);
                 }
-
-                if (GraphicFaceTracker.checkId(MainActivity.facesList, face.Id) == false)
+                for (int i = 0; i < MainActivity.data.Count; ++i)
                 {
-                    Console.WriteLine("Прошел чек");
-                    ////Переделываем цикл отрисовки
-                    //int i = 0;
-                    //foreach (var item in MainActivity.facesData["json"])
-                    //{
-                        
-                    //    var x0 = Convert.ToInt32(item["roi"][0]);
-                    //    var y0 = Convert.ToInt32(item["roi"][1]);
-                    //    //Центр лица
-                    //    var xCenter = (x0 + Convert.ToInt32(item["roi"][2]) / 2) - 100;
-                    //    var yCenter = (y0 + Convert.ToInt32(item["roi"][3]) / 2);
+                    //drawable[i] = false;
 
-                    //    if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
-                    //    {
-                    //        MainActivity.facesList.Add(face.Id);
-                    //        MainActivity.faceid_id.Add(i);
-                    //        drawable[i] = true;
-                    //    }
-                    //    i++;
-                    //}
-                    for (int i = 0; i < MainActivity.data.Count; ++i)
+                    var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
+                    var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
+                    //Центр лица
+                    var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - MainActivity.width;
+                    var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2) - 500;
+                    canvas.DrawCircle(xCenter, yCenter, 10, mBoxPaint);
+                    Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
+
+                    //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                    if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
                     {
-                        drawable[i] = false;
-
-                        var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
-                        var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
-                        //Центр лица
-                        var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
-                        var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
-                        Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
-
-                        //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
-                        if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
-                        {
-                            MainActivity.facesList.Add(face.Id);
-                            MainActivity.faceid_id.Add(i);
-                            drawable[i] = true;
-                        }
-
+                        displayedName = MainActivity.data[i]["name"];
+                        //canvas.DrawText(MainActivity.data[i]["name"], left - (leftCenterX + 400), bottom + 50, mIdPaint);
+                        //canvas.DrawText(MainActivity.data[i]["name"], left + (leftCenterX + 400), bottom + 50, mIdPaint);
+                        //break;
+                        //MainActivity.facesList.Add(face.Id);
+                        //MainActivity.faceid_id.Add(i);
+                        //drawable[i] = true;
                     }
 
                 }
-
-                if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
+                if (displayedName != "")
                 {
-                    for (int i = 0; i < MainActivity.facesList.Count; ++i)
-                    {
-                        //if (!drawable[i])
-                        //continue;
-                        Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]] + "; drawable.Length = " + drawable.Length);
-
-                        if (MainActivity.facesList[i] == face.Id)//&& drawable[MainActivity.faceid_id[i]])
-                        {
-                            Console.WriteLine("dbag face id = " + face.Id);
-                            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
-                            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left + (leftCenterX + 400), bottom + 50, mIdPaint);
-                            //break;
-                        }
-                    }
+                    canvas.DrawText(displayedName, left - (leftCenterX + 400), bottom + 50, mIdPaint);
+                    canvas.DrawText(displayedName, left + (leftCenterX + 400), bottom + 50, mIdPaint);
                 }
+
+                //if (GraphicFaceTracker.checkId(MainActivity.facesList, face.Id) == false)
+                //{
+                //    Console.WriteLine("Прошел чек");
+                //    ////Переделываем цикл отрисовки
+                //    //int i = 0;
+                //    //foreach (var item in MainActivity.facesData["json"])
+                //    //{
+
+                //    //    var x0 = Convert.ToInt32(item["roi"][0]);
+                //    //    var y0 = Convert.ToInt32(item["roi"][1]);
+                //    //    //Центр лица
+                //    //    var xCenter = (x0 + Convert.ToInt32(item["roi"][2]) / 2) - 100;
+                //    //    var yCenter = (y0 + Convert.ToInt32(item["roi"][3]) / 2);
+
+                //    //    if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
+                //    //    {
+                //    //        MainActivity.facesList.Add(face.Id);
+                //    //        MainActivity.faceid_id.Add(i);
+                //    //        drawable[i] = true;
+                //    //    }
+                //    //    i++;
+                //    //}
+                //    for (int i = 0; i < MainActivity.data.Count; ++i)
+                //    {
+                //        drawable[i] = false;
+
+                //        var x0 = Convert.ToInt32(MainActivity.data[i]["x"]);
+                //        var y0 = Convert.ToInt32(MainActivity.data[i]["y"]);
+                //        //Центр лица
+                //        var xCenter = Convert.ToInt32(MainActivity.data[i]["x"]) + (Convert.ToInt32(MainActivity.data[i]["width"]) / 2) - 100;
+                //        var yCenter = Convert.ToInt32(MainActivity.data[i]["y"]) - (Convert.ToInt32(MainActivity.data[i]["height"]) / 2);
+                //        Console.WriteLine("Check data: x vision = " + face.Position.X + ", x calc = " + xCenter + "; y vision = " + face.Position.Y + ", y calc = " + yCenter);
+
+                //        //if ((Math.Abs(left - x0) <= 250) && (Math.Abs(top - y0) <= 250))
+                //        if ((Math.Abs(face.Position.X - xCenter) <= 150) && (Math.Abs(face.Position.Y - yCenter) <= 150))
+                //        {
+                //            MainActivity.facesList.Add(face.Id);
+                //            MainActivity.faceid_id.Add(i);
+                //            drawable[i] = true;
+                //        }
+
+                //    }
+
+                //}
+
+                //if (MainActivity.facesList.Count != 0 && MainActivity.facesList.Count == MainActivity.data.Count)
+                //{
+                //    for (int i = 0; i < MainActivity.facesList.Count; ++i)
+                //    {
+                //        //if (!drawable[i])
+                //        //continue;
+                //        Console.WriteLine("drawable" + i + " = " + drawable[MainActivity.faceid_id[i]] + "; drawable.Length = " + drawable.Length);
+
+                //        if (MainActivity.facesList[i] == face.Id)//&& drawable[MainActivity.faceid_id[i]])
+                //        {
+                //            Console.WriteLine("dbag face id = " + face.Id);
+                //            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left - (leftCenterX + 400), bottom + 50, mIdPaint);
+                //            canvas.DrawText(MainActivity.data[i]["name"] + i.ToString() + " face", left + (leftCenterX + 400), bottom + 50, mIdPaint);
+                //            //break;
+                //        }
+                //    }
+                //}
             }
         }
     }

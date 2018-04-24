@@ -35,11 +35,17 @@ using Android.Views;
 using System.Web;
 using System.Net.Http.Headers;
 using System.Timers;
+using Android.Bluetooth;
 
 namespace LiveCam.Droid
 {
     [Activity(Label = "LiveCam.Droid", MainLauncher = true, Icon = "@drawable/icon", Theme = "@style/Theme.AppCompat.NoActionBar", ScreenOrientation = ScreenOrientation.Landscape)]
-    public class MainActivity : AppCompatActivity, IFactory, TextToSpeech.IOnInitListener, View.IOnTouchListener, View.IOnKeyListener, CameraSource.IPictureCallback
+    public class MainActivity : AppCompatActivity, 
+        IFactory, 
+        TextToSpeech.IOnInitListener, 
+        View.IOnTouchListener, 
+        View.IOnKeyListener, 
+        CameraSource.IPictureCallback
     {
         //Установка погрешности определения лиц
         //Устанавливается с клика по экрану - сделать!!!!!
@@ -84,6 +90,7 @@ namespace LiveCam.Droid
         public static int faceCounter = 0;
         public static Timer timer;
         public static int count;
+        private static readonly int REQUEST_ENABLE_BT = 1;
         private static readonly int RC_HANDLE_GMS = 9001;
         // permission request codes need to be < 256
         private static readonly int RC_HANDLE_CAMERA_PERM = 2;
@@ -94,8 +101,21 @@ namespace LiveCam.Droid
         Java.Util.Locale lang;
         protected async override void OnCreate(Bundle bundle)
         {
-
             base.OnCreate(bundle);
+            //Подключаем bluetooth
+            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.DefaultAdapter;
+            if (mBluetoothAdapter == null)
+            {
+                // Device doesn't support Bluetooth
+            }
+            if (!mBluetoothAdapter.IsEnabled)
+            {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ActionRequestEnable);
+                StartActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
+
+
+
             if (FaceGraphic.detectedNames == null)
             {
                 FaceGraphic.detectedNames = new Dictionary<int, string>();
@@ -131,7 +151,7 @@ namespace LiveCam.Droid
             var metrics = Resources.DisplayMetrics;
             MainActivity.width = metrics.WidthPixels;
             MainActivity.height = metrics.HeightPixels;
-            //System.Console.WriteLine("width = " + width + ", height = " + height);
+            System.Console.WriteLine("width = " + width + ", height = " + height);
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
 
@@ -588,9 +608,10 @@ namespace LiveCam.Droid
                                 }
                             }
 
-                            catch (HttpRequestException)
+                            catch (HttpRequestException e)
                             {
                                 System.Console.WriteLine("HttpRequetsExeption");
+                                System.Console.WriteLine(e.Message);
                             }
                         }
                     }
@@ -687,21 +708,24 @@ namespace LiveCam.Droid
                 }
             }
         }
+
         public override void OnUpdate(Detector.Detections detections, Java.Lang.Object item)
         {
             var face = item as Face;
             mOverlay.Add(mFaceGraphic);
             mFaceGraphic.UpdateFace(face);
         }
+
         //Удаление рамки при потере лица
         public override void OnMissing(Detector.Detections detections)
         {
             System.Console.WriteLine("Missing face");
             mOverlay.Remove(mFaceGraphic);
             //MainActivity.facesList.Clear();
-            MainActivity.facesList.Clear();// = null;
-            MainActivity.data.Clear();// = null;            
-            MainActivity.faceid_id.Clear();// = null;
+            //--------Возможно тут не надо---------------
+            //MainActivity.facesList.Clear();// = null;
+            //MainActivity.data.Clear();// = null;            
+            //MainActivity.faceid_id.Clear();// = null;
             FaceGraphic.drawable = null;
 
         }
